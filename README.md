@@ -57,7 +57,7 @@ java -jar scaffold-admin/target/scaffold-admin-0.1.0-SNAPSHOT.jar
 ```
 
 ```bash
-# 前端命令一律在仓库根执行（npm workspaces）；首次使用先 npm install
+# 在 scaffold-vue 目录启动前端；首次使用先 npm install
 npm run dev
 ```
 
@@ -96,11 +96,11 @@ mvn -pl scaffold-admin -am test
 ```
 
 ```bash
-# 在仓库根：test:unit 会分别进 packages/scaffold-ui 与 scaffold-vue 各跑一遍
+# 在 scaffold-vue 目录
 npm run test:unit
 npm run build
 # 已安装 Python Playwright 与 Chromium 时，可验证真实浏览器会话与权限
-python3 scaffold-vue/scripts/session-regression.py
+python3 scripts/session-regression.py
 ```
 
 浏览器回归脚本只创建并删除自己生成的测试角色和用户，不清空表（用户与角色按逻辑删除，行会留在表里、`deleted` 置 1）；管理员密码可通过 `SCAFFOLD_TEST_PASSWORD` 覆盖。脚本无法读验证码图片，因此**要求后端以 `CAPTCHA_ENABLED=false` 启动**（与 `scaffold-admin` 的 surefire 同一口径），否则登录第一步就会失败。测试与构建成功不能代替业务页面验收。
