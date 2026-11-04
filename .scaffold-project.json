@@ -1,9 +1,9 @@
 {
   "projectCode" : "order-serive",
   "projectName" : "订单中台",
-  "baseScaffoldSha" : "30993928acc9a79ccaeab06d108770e1105ff6b5",
+  "baseScaffoldSha" : "effbcfe86740d9167662233c89eafbe997378e31",
   "mainBranch" : "main",
   "generatedBranch" : "platform-generated",
-  "initializedAt" : "2026-11-04T10:10:58.031850+08:00",
+  "initializedAt" : "2026-11-04T13:25:00.717754+08:00",
   "note" : "平台只写 generatedBranch 分支；本文件所在分支由使用方掌控，固定代码可自由修改。"
 }

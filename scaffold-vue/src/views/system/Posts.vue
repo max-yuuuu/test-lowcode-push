@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { reactive, ref, watch } from 'vue'
-import { Field, Segmented, StatusTag, Switch, TextInput, type Column } from '@/components/ui'
-import { DictSelect, FormDialog, ListPage, PermissionButton } from '@/components/business'
-import PostLadder from '@/components/business/PostLadder.vue'
+import { Field, Segmented, StatusTag, Switch, TextInput, type Column } from '@yuanda-lowcode-ai/scaffold-ui/components/ui'
+import { DictSelect, FormDialog, ListPage, PermissionButton } from '@yuanda-lowcode-ai/scaffold-ui/components/business'
+import PostLadder from '@yuanda-lowcode-ai/scaffold-ui/components/business/PostLadder.vue'
 import { systemApi } from '@/api'
-import { useListPage } from '@/composables/list'
-import { useViewMode } from '@/composables/view'
-import { confirm } from '@/composables/confirm'
-import { pushToast, toastError } from '@/composables/toast'
-import { pattern, required, validate } from '@/utils/validate'
+import { useListPage } from '@yuanda-lowcode-ai/scaffold-ui/composables/list'
+import { useViewMode } from '@yuanda-lowcode-ai/scaffold-ui/composables/view'
+import { confirm } from '@yuanda-lowcode-ai/scaffold-ui/composables/confirm'
+import { pushToast, toastError } from '@yuanda-lowcode-ai/scaffold-ui/composables/toast'
+import { pattern, required, validate } from '@yuanda-lowcode-ai/scaffold-ui/utils/validate'
 
 interface PostRow { id: number; postCode: string; postName: string; sort: number; status: number; remark?: string; userCount: number; createTime: string }
 

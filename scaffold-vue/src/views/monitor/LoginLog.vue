@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import Icon from '@/components/Icon.vue'
-import { Field, Metric, SectionLabel, Segmented, Select, Tag, TextInput, type Column } from '@/components/ui'
-import { ListPage, PermissionButton } from '@/components/business'
-import TrendChart from '@/components/charts/TrendChart.vue'
-import HeatGrid from '@/components/charts/HeatGrid.vue'
+import Icon from '@yuanda-lowcode-ai/scaffold-ui/components/Icon.vue'
+import { Field, Metric, SectionLabel, Segmented, Select, Tag, TextInput, type Column } from '@yuanda-lowcode-ai/scaffold-ui/components/ui'
+import { ListPage, PermissionButton } from '@yuanda-lowcode-ai/scaffold-ui/components/business'
+import TrendChart from '@yuanda-lowcode-ai/scaffold-ui/components/charts/TrendChart.vue'
+import HeatGrid from '@yuanda-lowcode-ai/scaffold-ui/components/charts/HeatGrid.vue'
 import { systemApi, type LoginHeatmap, type LoginLogStats, type StatsRange } from '@/api'
-import { useViewMode } from '@/composables/view'
-import { revealCascade } from '@/composables/motion'
-import { useListPage } from '@/composables/list'
-import { confirm } from '@/composables/confirm'
-import { pushToast, toastError } from '@/composables/toast'
+import { useViewMode } from '@yuanda-lowcode-ai/scaffold-ui/composables/view'
+import { revealCascade } from '@yuanda-lowcode-ai/scaffold-ui/composables/motion'
+import { useListPage } from '@yuanda-lowcode-ai/scaffold-ui/composables/list'
+import { confirm } from '@yuanda-lowcode-ai/scaffold-ui/composables/confirm'
+import { pushToast, toastError } from '@yuanda-lowcode-ai/scaffold-ui/composables/toast'
 
 interface LoginRow { id: number; username: string; status: number; msg?: string; ip?: string; location?: string; browser?: string; os?: string; loginTime: string }
 
