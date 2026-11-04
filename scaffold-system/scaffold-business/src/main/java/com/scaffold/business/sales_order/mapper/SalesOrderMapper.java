@@ -110,7 +110,7 @@ public interface SalesOrderMapper {
             INSERT INTO sales_order (order_no, amount, status, delivery_date, remark, create_by, update_by)
             VALUES (#{salesOrder.orderNo}, #{salesOrder.amount}, #{salesOrder.status}, #{salesOrder.deliveryDate}, #{salesOrder.remark}, #{operator}, #{operator})
             """)
-    @Options(useGeneratedKeys = true, keyProperty = "id")
+    @Options(useGeneratedKeys = true, keyProperty = "salesOrder.id")
     int insert(
             @Param("salesOrder") SalesOrder salesOrder,
             @Param("operator") String operator
