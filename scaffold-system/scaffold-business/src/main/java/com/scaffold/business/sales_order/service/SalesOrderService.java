@@ -75,10 +75,11 @@ public class SalesOrderService {
     ) {
         List<SalesOrderRow> rows = mapper.selectRows(orderNo, amountStart, amountEnd, status, 0, EXPORT_LIMIT);
         extension.afterRows(rows);
+        // 导出的列与页面上那一套对齐：开了审计开关时页面有「创建时间」列，CSV 也要有这一列
         List<List<Object>> data = rows.stream()
-                .map(row -> CsvUtils.row(row.getId(), row.getOrderNo(), row.getAmount(), row.getStatus(), row.getDeliveryDate(), row.getRemark()))
+                .map(row -> CsvUtils.row(row.getId(), row.getOrderNo(), row.getAmount(), row.getStatus(), row.getDeliveryDate(), row.getRemark(), row.getCreateTime()))
                 .toList();
-        return CsvUtils.csv(List.of("主键", "订单编号", "订单金额", "状态", "交货日期", "备注"), data);
+        return CsvUtils.csv(List.of("主键", "订单编号", "订单金额", "状态", "交货日期", "备注", "创建时间"), data);
     }
 
     /** 新增销售订单主表，返回新行主键 */

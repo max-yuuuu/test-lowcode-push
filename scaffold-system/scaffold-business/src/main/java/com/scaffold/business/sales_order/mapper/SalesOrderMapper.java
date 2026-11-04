@@ -43,14 +43,22 @@ public interface SalesOrderMapper {
             @Param("status") Integer status
     );
 
-    /** 一页列表行。排序固定按主键倒序（最新在前）：不按字段名猜「哪个才是排序列」 */
+    /**
+     * 一页列表行。排序固定按主键倒序（最新在前）：不按字段名猜「哪个才是排序列」。
+     * <p>审计四列要跟着选出来：开了审计开关时 {@code SalesOrderRow} 与页面上的「创建时间」列都有它们，
+     * 这里不选就是每行一个空值 —— 编译与单测都不会报，要到项目里打开页面才看得见。
+     */
     @Select("""
             SELECT t.id,
                    t.order_no AS orderNo,
                    t.amount,
                    t.status,
                    t.delivery_date AS deliveryDate,
-                   t.remark
+                   t.remark,
+                   t.create_by AS createBy,
+                   t.update_by AS updateBy,
+                   t.create_time AS createTime,
+                   t.update_time AS updateTime
             FROM sales_order t
             WHERE t.deleted = 0
               AND (#{orderNo} IS NULL OR #{orderNo} = ''
