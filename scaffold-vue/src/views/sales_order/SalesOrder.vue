@@ -162,10 +162,10 @@ async function remove(row: SalesOrderRow) {
         <TextInput v-model="list.query.orderNo" clearable @enter="list.search()" />
       </Field>
       <Field label="订单金额（起）">
-        <NumberInput v-model="list.query.amountStart" />
+        <NumberInput v-model="list.query.amountStart" :precision="2" />
       </Field>
       <Field label="订单金额（止）">
-        <NumberInput v-model="list.query.amountEnd" />
+        <NumberInput v-model="list.query.amountEnd" :precision="2" />
       </Field>
       <Field label="状态">
         <DictSelect v-model="list.query.status" type="sys_normal_disable" all-label="全部" />
@@ -190,7 +190,7 @@ async function remove(row: SalesOrderRow) {
       <TextInput v-model="form.orderNo" />
     </Field>
     <Field label="订单金额" :error="errors.amount">
-      <NumberInput v-model="form.amount" />
+      <NumberInput v-model="form.amount" :precision="2" />
     </Field>
     <Field label="状态" required :error="errors.status">
       <DictSelect v-model="form.status" type="sys_normal_disable" />
