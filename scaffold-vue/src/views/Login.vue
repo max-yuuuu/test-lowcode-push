@@ -104,7 +104,6 @@ const CAPABILITIES = [
   { icon: 'role', title: '角色与按钮权限', desc: '菜单、按钮两级授权，前后端同一套权限码' },
   { icon: 'layers', title: '数据权限', desc: '全部 / 本部门及下级 / 本部门 / 本人' },
   { icon: 'log', title: '操作审计', desc: '登录日志与操作日志自动记录' },
-  { icon: 'code', title: '代码生成', desc: '导入数据表，生成业务模块开发骨架' },
 ]
 
 async function refreshCaptcha() {

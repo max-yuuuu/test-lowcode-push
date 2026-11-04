@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 /**
  * 销售订单主表（表 {@code sales_order}）。
  *
- * <p>本类由元搭低代码平台按模型定义生成，属 B 档：每次发布整文件覆盖，请不要在这里改业务逻辑，
+ * <p>本类由低代码设计器按模型定义生成，属 B 档：每次发布整文件覆盖，请不要在这里改业务逻辑，
  * 需要扩展请写到同包的 {@code SalesOrderExtension}（C 档，生成一次后平台不再覆盖）。
  */
 public class SalesOrder {

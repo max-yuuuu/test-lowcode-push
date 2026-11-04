@@ -9,10 +9,10 @@ import { required, validate } from '@yuanda-lowcode-ai/scaffold-ui/utils/validat
 import { salesOrderApi, type SalesOrderRow, type SalesOrderWriteRequest } from '@/api/sales_order/sales_order'
 
 /* ============================================================
-   销售订单主表管理。由元搭低代码平台按模型定义生成，属 B 档：每次发布整文件覆盖。
+   销售订单主表管理。由低代码设计器按模型定义生成，属 B 档：每次发布整文件覆盖。
    版式固定走 ListPage + useListPage（查询 / 重置 / 分页 / 导出 / 行操作都是公共能力），
    页面只声明字段、列与动作。要加区块写到 src/views/sales_order/overrides/ 里；
-   整页接管见方案 §5.2 —— 那个页面从此脱离平台托管。
+   要长期人工接管这一页，就把它改名并让发布不再产出它 —— 现在它每次发布都会被整文件覆盖。
    ============================================================ */
 
 type SalesOrderQuery = {
@@ -148,7 +148,7 @@ async function remove(row: SalesOrderRow) {
 <template>
   <ListPage
     title="销售订单主表管理"
-    desc="本页由元搭低代码平台按模型定义生成；要改字段回到设计器改模型再发布。"
+    desc="本页由低代码设计器按模型定义生成；要改字段回到设计器改模型再发布。"
     table-title="销售订单列表"
     :list="list"
     :columns="columns"
