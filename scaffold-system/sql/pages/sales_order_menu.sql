@@ -24,10 +24,20 @@ SELECT @sales_order_menu, '新增销售订单', 'btn', '', '', '', 'sales_order:
 FROM DUAL
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE permission = 'sales_order:sales_order:add');
 
+INSERT INTO sys_menu (parent_id, menu_name, menu_type, icon, path, component, permission, sort, visible, status, create_by, update_by)
+SELECT @sales_order_menu, '编辑销售订单', 'btn', '', '', '', 'sales_order:sales_order:edit', 2, 1, 1, 'system', 'system'
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE permission = 'sales_order:sales_order:edit');
+
+INSERT INTO sys_menu (parent_id, menu_name, menu_type, icon, path, component, permission, sort, visible, status, create_by, update_by)
+SELECT @sales_order_menu, '删除销售订单', 'btn', '', '', '', 'sales_order:sales_order:remove', 3, 1, 1, 'system', 'system'
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE permission = 'sales_order:sales_order:remove');
+
 -- 授给内置管理员角色（role_id = 1，与 V2 种子里的角色同一个），同样按已存在判重。
 -- 其它角色要不要看到这个页面，请在项目的角色管理里勾，不由平台代做。
 INSERT INTO sys_role_menu (role_id, menu_id)
 SELECT 1, m.id
 FROM sys_menu m
-WHERE m.permission IN ('sales_order:sales_order:list', 'sales_order:sales_order:add')
+WHERE m.permission IN ('sales_order:sales_order:list', 'sales_order:sales_order:add', 'sales_order:sales_order:edit', 'sales_order:sales_order:remove')
   AND NOT EXISTS (SELECT 1 FROM sys_role_menu rm WHERE rm.role_id = 1 AND rm.menu_id = m.id);
