@@ -9,33 +9,30 @@ import { required, validate } from '@yuanda-lowcode-ai/scaffold-ui/utils/validat
 import { salesOrderApi, type SalesOrderRow, type SalesOrderWriteRequest } from '@/api/sales_order/sales_order'
 
 /* ============================================================
-   销售订单主表管理。由低代码设计器按模型定义生成，属 B 档：每次发布整文件覆盖。
+   sales_order。由低代码设计器按模型定义生成，属 B 档：每次发布整文件覆盖。
    版式固定走 ListPage + useListPage（查询 / 重置 / 分页 / 导出 / 行操作都是公共能力），
    页面只声明字段、列与动作。要加区块写到 src/views/sales_order/overrides/ 里；
    要长期人工接管这一页，就把它改名并让发布不再产出它 —— 现在它每次发布都会被整文件覆盖。
    ============================================================ */
 
 type SalesOrderQuery = {
-  orderNo: string
   amountStart: number | null
   amountEnd: number | null
+  orderNo: string
   status: number | null
 }
 
 const list = useListPage<SalesOrderRow, SalesOrderQuery>({
   query: {
-    orderNo: '',
     amountStart: null,
     amountEnd: null,
+    orderNo: '',
     status: null,
   },
   fetch: params => salesOrderApi.list(params),
-  exporter: params => salesOrderApi.export(params),
-  exportName: '销售订单主表.csv',
 })
 
 const columns: Column[] = [
-  { key: 'id', title: '主键', minWidth: 110, align: 'right' },
   { key: 'orderNo', title: '订单编号', minWidth: 160 },
   { key: 'amount', title: '订单金额', minWidth: 110, align: 'right' },
   { key: 'status', title: '状态', minWidth: 110, align: 'right' },
@@ -147,31 +144,30 @@ async function remove(row: SalesOrderRow) {
 
 <template>
   <ListPage
-    title="销售订单主表管理"
+    title="sales_order"
     desc="本页由低代码设计器按模型定义生成；要改字段回到设计器改模型再发布。"
     table-title="销售订单列表"
     :list="list"
     :columns="columns"
   >
     <template #actions>
-      <PermissionButton perm="sales_order:sales_order:add" variant="primary" icon="plus" @click="openCreate">新增销售订单</PermissionButton>
+      <PermissionButton perm="sales_order:sales_order:add" variant="primary" icon="plus" @click="openCreate">新增</PermissionButton>
     </template>
 
     <template #search>
-      <Field label="订单编号">
-        <TextInput v-model="list.query.orderNo" clearable @enter="list.search()" />
-      </Field>
       <Field label="订单金额（起）">
         <NumberInput v-model="list.query.amountStart" :precision="2" />
       </Field>
       <Field label="订单金额（止）">
         <NumberInput v-model="list.query.amountEnd" :precision="2" />
       </Field>
+      <Field label="单据编号">
+        <TextInput v-model="list.query.orderNo" clearable @enter="list.search()" />
+      </Field>
       <Field label="状态">
         <DictSelect v-model="list.query.status" type="sys_normal_disable" all-label="全部" />
       </Field>
     </template>
-    <template #cell-id="{ row }"><span class="tnum">{{ row.id ?? '—' }}</span></template>
     <template #cell-amount="{ row }"><span class="tnum">{{ row.amount ?? '—' }}</span></template>
     <template #cell-status="{ row }"><DictTag type="sys_normal_disable" :value="row.status" /></template>
     <template #cell-deliveryDate="{ row }"><span class="tnum soft">{{ row.deliveryDate ?? '—' }}</span></template>

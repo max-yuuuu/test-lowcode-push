@@ -47,12 +47,12 @@ public class SalesOrderController {
     @RequiresPermission("sales_order:sales_order:list")
     public R<PageResult<SalesOrderRow>> list(
             PageQuery query,
-            @RequestParam(required = false) String orderNo,
             @RequestParam(required = false) BigDecimal amountStart,
             @RequestParam(required = false) BigDecimal amountEnd,
+            @RequestParam(required = false) String orderNo,
             @RequestParam(required = false) Integer status
     ) {
-        return R.success(service.page(query, orderNo, amountStart, amountEnd, status));
+        return R.success(service.page(query, amountStart, amountEnd, orderNo, status));
     }
 
     /** 单行详情：前端编辑前取整行，避免用列表行填表时把没显示的字段清空 */
@@ -66,12 +66,12 @@ public class SalesOrderController {
     @GetMapping("/export")
     @RequiresPermission("sales_order:sales_order:list")
     public ResponseEntity<String> export(
-            @RequestParam(required = false) String orderNo,
             @RequestParam(required = false) BigDecimal amountStart,
             @RequestParam(required = false) BigDecimal amountEnd,
+            @RequestParam(required = false) String orderNo,
             @RequestParam(required = false) Integer status
     ) {
-        return CsvResponse.attachment("salesOrder.csv", service.export(orderNo, amountStart, amountEnd, status));
+        return CsvResponse.attachment("salesOrder.csv", service.export(amountStart, amountEnd, orderNo, status));
     }
 
     @PostMapping

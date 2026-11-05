@@ -43,14 +43,14 @@ public class SalesOrderService {
     /** 分页列表。查询条件逐个平铺在签名上：前端传什么、SQL 查什么，不用翻到 Mapper 才看清楚 */
     public PageResult<SalesOrderRow> page(
             PageQuery query,
-            String orderNo,
             BigDecimal amountStart,
             BigDecimal amountEnd,
+            String orderNo,
             Integer status
     ) {
-        List<SalesOrderRow> rows = mapper.selectRows(orderNo, amountStart, amountEnd, status, query.offset(), query.normalizedPageSize());
+        List<SalesOrderRow> rows = mapper.selectRows(amountStart, amountEnd, orderNo, status, query.offset(), query.normalizedPageSize());
         extension.afterRows(rows);
-        long total = mapper.countByQuery(orderNo, amountStart, amountEnd, status);
+        long total = mapper.countByQuery(amountStart, amountEnd, orderNo, status);
         return PageResult.of(rows, total, query.normalizedPageNum(), query.normalizedPageSize());
     }
 
@@ -68,12 +68,12 @@ public class SalesOrderService {
      * 不是中文标签 —— 需要中文时在 C 档的 {@code afterRows} 里换，别在导出的时候顺手改口径。
      */
     public String export(
-            String orderNo,
             BigDecimal amountStart,
             BigDecimal amountEnd,
+            String orderNo,
             Integer status
     ) {
-        List<SalesOrderRow> rows = mapper.selectRows(orderNo, amountStart, amountEnd, status, 0, EXPORT_LIMIT);
+        List<SalesOrderRow> rows = mapper.selectRows(amountStart, amountEnd, orderNo, status, 0, EXPORT_LIMIT);
         extension.afterRows(rows);
         // 导出的列与页面上那一套对齐：开了审计开关时页面有「创建时间」列，CSV 也要有这一列
         List<List<Object>> data = rows.stream()

@@ -30,16 +30,16 @@ public interface SalesOrderMapper {
             SELECT COUNT(*)
             FROM sales_order t
             WHERE t.deleted = 0
-              AND (#{orderNo} IS NULL OR #{orderNo} = ''
-                   OR t.order_no LIKE CONCAT('%', #{orderNo}, '%'))
               AND (#{amountStart} IS NULL OR t.amount >= #{amountStart})
               AND (#{amountEnd} IS NULL OR t.amount <= #{amountEnd})
+              AND (#{orderNo} IS NULL OR #{orderNo} = ''
+                   OR t.order_no LIKE CONCAT('%', #{orderNo}, '%'))
               AND (#{status} IS NULL OR t.status = #{status})
             """)
     long countByQuery(
-            @Param("orderNo") String orderNo,
             @Param("amountStart") BigDecimal amountStart,
             @Param("amountEnd") BigDecimal amountEnd,
+            @Param("orderNo") String orderNo,
             @Param("status") Integer status
     );
 
@@ -61,18 +61,18 @@ public interface SalesOrderMapper {
                    t.update_time AS updateTime
             FROM sales_order t
             WHERE t.deleted = 0
-              AND (#{orderNo} IS NULL OR #{orderNo} = ''
-                   OR t.order_no LIKE CONCAT('%', #{orderNo}, '%'))
               AND (#{amountStart} IS NULL OR t.amount >= #{amountStart})
               AND (#{amountEnd} IS NULL OR t.amount <= #{amountEnd})
+              AND (#{orderNo} IS NULL OR #{orderNo} = ''
+                   OR t.order_no LIKE CONCAT('%', #{orderNo}, '%'))
               AND (#{status} IS NULL OR t.status = #{status})
             ORDER BY t.id DESC
             LIMIT #{offset}, #{limit}
             """)
     List<SalesOrderRow> selectRows(
-            @Param("orderNo") String orderNo,
             @Param("amountStart") BigDecimal amountStart,
             @Param("amountEnd") BigDecimal amountEnd,
+            @Param("orderNo") String orderNo,
             @Param("status") Integer status,
             @Param("offset") int offset,
             @Param("limit") int limit
