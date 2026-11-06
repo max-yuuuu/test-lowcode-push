@@ -14,6 +14,7 @@
 - 所有可复用的前端能力必须组件化，不允许在每个页面重复实现。
 - 所有后台页面必须遵守同一套设计语言，包括颜色、字体、字号、间距、圆角、边框、阴影、表格密度、按钮样式、弹窗样式和表单样式。
 - 页面开发优先复用 `ListPage`、`useListPage` / `useTreeListPage`、`DataTable`、`SearchForm`、`FormDialog`、`RowActions` / `RowMenuItem`、`PermissionButton`、`DictSelect`、`DeptTree`、`DeptSelect`、`UserSelect`、`PermissionTree`、`TreeSelect`、`DateInput` / `DateRangePicker`、`NumberInput` / `Textarea`、`Tabs` / `TabPane`、`Upload` / `Photo` / `ImageField`、`Descriptions` / `DescriptionsItem`，以及 `usePopover`、`dateValue`、`upload` 三个 composable，不在页面重复拼装公共列表、表单、日期、上传或浮层能力。
+- 上述物料与珍珠玻璃样式住在 `packages/scaffold-ui`（包名 `@yuanda-lowcode-ai/scaffold-ui`）：宿主页面按子路径引用（`@yuanda-lowcode-ai/scaffold-ui/components/ui`、`@yuanda-lowcode-ai/scaffold-ui/components/business`、`@yuanda-lowcode-ai/scaffold-ui/composables/list`、`@yuanda-lowcode-ai/scaffold-ui/theme.css`），不再写 `@/components/...`。包内**不得** import 宿主的 `@/api`、`@/composables/auth`、`@/directives`，也不读 `import.meta.env`；需要宿主能力时扩展 `installScaffoldUi({ http, permission, dict })` 的注入契约（宿主适配在 `scaffold-vue/src/api/scaffold-providers.ts`），而不是让包去够宿主。平台外壳（`components/layout/**`、登录页、动态路由、品牌配置 `data/index.ts`）留在 `scaffold-vue`，设计器专属件同样留宿主并被 §6.4 裁掉。
 - 所有列表页默认具备查询、重置、分页、导出、状态展示、行操作等通用能力；新增列表页面时不得遗漏这些能力，除非明确说明业务上不需要。
 - 所有导出能力必须优先复用统一导出工具或统一表格组件，不允许每个页面临时实现一套导出逻辑。
 - 页面只负责业务字段、业务动作和模块差异；通用交互、样式和布局必须沉淀到组件、样式变量或工具函数中。
@@ -48,11 +49,35 @@
 - 业务表默认包含四字段：`create_by VARCHAR(64)`、`update_by VARCHAR(64)`、`create_time DATETIME`、`update_time DATETIME`。日志表、字典表、关联中间表等可例外，但需说明。
 - 返回给前端的接口字段、数据库字段等英文标识，需附中文说明其含义/用途。
 
+## 测试与验收（TDD 与 e2e）
+
+- **先写测试再实现**：新行为先用用例描述出来、跑出失败（失败原因正是待实现的那件事），再动手实现把它转绿。不允许实现完再补一组「描述现状」的断言。
+- **每个功能都要有测试**，没有对应测试的功能不算完成、不进入提交。分层按风险给：形状与规则给单元/参数化测试，跨模块的装配给集成测试。
+- **功能完成必须跑 e2e**，只有类型检查或单测绿不算交付。本项目的 e2e 形态按链路选：
+  - 后端接口：起真实 Spring 上下文打接口（IT 库固定 `DB_PORT=3316 REDIS_PORT=6380`，另需 `JWT_SECRET`，否则整个上下文起不来）。
+  - 代码生成物：把产物落盘后真起 `javac` 编译；前端产物进宿主跑 `vue-tsc` + `vite build`。
+  - SQL：在临时库里真执行并验证幂等（跑两遍），跑完即删，不动正式 IT 库。
+  - 交付链改动：物化交付快照真跑 `npm install` + 构建，单测对「交付缺组件就编译不过」无感知。
+- **报告要写清 e2e 实际跑了什么、结果如何**；跑不了（缺环境、无可见浏览器）就如实说明未验证，不得用单测绿冒充交付验证。
+
 ## 版本与文档
 
 - 不主动 commit。完成一个逻辑单元后，提出建议的 commit message 供用户确认，确认后再提交；用户明确要求时可直接提交。
 - 代码变更后维护项目中的 `changelog.md`（记录变更内容），该文件不存在则创建。
 - 模块、接口或调用链改变时同步 `PROJECT_MAP.md` 和相关说明；保留历史日志与人工备注。
+
+## 分支与 PR 流程
+
+固定一条路径：**任务完成 → 基于 `dev` 的新分支提交 → 向 `dev` 开 PR**。用户指定走这条流程时，提交、推送、开 PR 视为已授权，不必逐次确认；commit message 与 PR 内容在完成后一并报告。
+
+- **一个任务一条分支**，命名 `<类型>/<范围>`：`feat/lowcode-pr5d-frontend-templates`、`docs/lowcode-generation-caliber`、`chore/agents-branch-workflow`。开工时从最新的远端 dev 拉：`git fetch --prune <远端>` 后 `git switch -c <新分支> <远端>/dev`。
+- **已合并的分支不再追加提交**。PR 合进 dev 就是收口了，往那条分支上继续推会把新工作混进已合并的 PR（本仓库真踩过：PR 合并后同分支又推两个提交，只能另开分支重搬）。
+- **提交前确认基点**：`git log --oneline <远端>/dev..HEAD` 的条数必须正好是本任务要提的提交。多出来的就是基点不对 —— 前一任务的 PR 还没合，此时等它合并，或把新分支指向那个 tip 并在 PR 描述里写明前置 PR。
+- **下一个任务开始前先合并**：任务之间是串行依赖的（后一个要用前一个的产物），所以下一个任务从 dev 拉分支的前提是前一个 PR 已合并；不要为了赶进度自行叠加。
+- 合并方向只有 `feature → dev`，`dev → main` 只做阶段性收口，永不反向、不直接在 dev 上写。合并不强推，优先 `--ff-only`，有分叉就用合并提交。
+- **共享分支（`dev` / `main`）绝不 force-push**，也不擅自删远端分支或改仓库配置（子模块指针、remote、`.gitmodules`）—— 这些一律先与用户确认。本地还没推过的分支重指基点是安全的。
+- 本仓库的远端是 `lowcode-ai`（平台迭代）；`origin` / `upstream` 是脚手架上游，**不往它们推**。
+- changelog 与 `PROJECT_MAP.md` 跟着所属任务一起进 PR，不让文档跨 PR 悬空；代码与文档可以拆成同 PR 的两条提交。
 
 ## 部署
 

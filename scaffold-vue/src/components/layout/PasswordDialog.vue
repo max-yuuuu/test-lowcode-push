@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { reactive, ref, watch } from 'vue'
-import FormDialog from '@/components/business/FormDialog.vue'
-import Field from '@/components/ui/Field.vue'
-import TextInput from '@/components/ui/TextInput.vue'
+import FormDialog from '@yuanda-lowcode-ai/scaffold-ui/components/business/FormDialog.vue'
+import Field from '@yuanda-lowcode-ai/scaffold-ui/components/ui/Field.vue'
+import TextInput from '@yuanda-lowcode-ai/scaffold-ui/components/ui/TextInput.vue'
 import { authApi } from '@/api'
-import { pushToast, toastError } from '@/composables/toast'
-import { required, validate } from '@/utils/validate'
+import { pushToast, toastError } from '@yuanda-lowcode-ai/scaffold-ui/composables/toast'
+import { required, validate } from '@yuanda-lowcode-ai/scaffold-ui/utils/validate'
 
 const props = defineProps<{ open: boolean }>()
 const emit = defineEmits<{ (e: 'close'): void }>()

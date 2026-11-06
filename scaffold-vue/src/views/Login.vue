@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import Icon from '@/components/Icon.vue'
-import Button from '@/components/ui/Button.vue'
-import Field from '@/components/ui/Field.vue'
-import TextInput from '@/components/ui/TextInput.vue'
-import Checkbox from '@/components/ui/Checkbox.vue'
+import Icon from '@yuanda-lowcode-ai/scaffold-ui/components/Icon.vue'
+import Button from '@yuanda-lowcode-ai/scaffold-ui/components/ui/Button.vue'
+import Field from '@yuanda-lowcode-ai/scaffold-ui/components/ui/Field.vue'
+import TextInput from '@yuanda-lowcode-ai/scaffold-ui/components/ui/TextInput.vue'
+import Checkbox from '@yuanda-lowcode-ai/scaffold-ui/components/ui/Checkbox.vue'
 import { ApiError, authApi, portalApi } from '@/api'
 import NeuralNet from '@/components/NeuralNet.vue'
 import { login, registerTenant } from '@/composables/auth'
-import { EASE, afterTwoFrames, gsap, motionSkipped, prefersReducedMotion, trackGlow } from '@/composables/motion'
-import { maxLength, pattern, required, validate } from '@/utils/validate'
+import { EASE, afterTwoFrames, gsap, motionSkipped, prefersReducedMotion, trackGlow } from '@yuanda-lowcode-ai/scaffold-ui/composables/motion'
+import { maxLength, pattern, required, validate } from '@yuanda-lowcode-ai/scaffold-ui/utils/validate'
 import { APP } from '@/data'
 
 const router = useRouter()
@@ -104,7 +104,6 @@ const CAPABILITIES = [
   { icon: 'role', title: '角色与按钮权限', desc: '菜单、按钮两级授权，前后端同一套权限码' },
   { icon: 'layers', title: '数据权限', desc: '全部 / 本部门及下级 / 本部门 / 本人' },
   { icon: 'log', title: '操作审计', desc: '登录日志与操作日志自动记录' },
-  { icon: 'code', title: '代码生成', desc: '导入数据表，生成业务模块开发骨架' },
 ]
 
 async function refreshCaptcha() {

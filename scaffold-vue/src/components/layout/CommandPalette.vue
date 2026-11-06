@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import Icon from '@/components/Icon.vue'
-import Avatar from '@/components/ui/Avatar.vue'
+import Icon from '@yuanda-lowcode-ai/scaffold-ui/components/Icon.vue'
+import Avatar from '@yuanda-lowcode-ai/scaffold-ui/components/ui/Avatar.vue'
 import { systemApi, type UserRow } from '@/api'
 import { navGroups, pathOf } from '@/composables/auth'
-import { appearance } from '@/composables/appearance'
-import { overlayEnter, overlayLeave, revealCascade, slideThumb, typeOut } from '@/composables/motion'
-import { createFocusTrap } from '@/composables/focus'
-import { ask, presetQuestions, type AnswerCard, type AnswerChip } from '@/composables/ask'
-import { hasPermission } from '@/directives/permission'
+import { appearance } from '@yuanda-lowcode-ai/scaffold-ui/composables/appearance'
+import { overlayEnter, overlayLeave, revealCascade, slideThumb, typeOut } from '@yuanda-lowcode-ai/scaffold-ui/composables/motion'
+import { createFocusTrap } from '@yuanda-lowcode-ai/scaffold-ui/composables/focus'
+import { ask, presetQuestions, type AnswerCard, type AnswerChip } from '@yuanda-lowcode-ai/scaffold-ui/composables/ask'
+import { hasPermission } from '@/composables/permission'
 
 /* ============================================================
    命令面板：最近访问 / 页面 / 用户 / 快捷动作 四组结果，

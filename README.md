@@ -2,38 +2,11 @@
 
 用于后续后台管理系统开发的 Spring Boot + Vue 底座。包含认证、菜单与按钮权限、数据权限、组织管理、字典、参数、日志、工作台和代码生成骨架；新增项目在此基础上实现业务模块。
 
-> **演进方向**：本项目正从通用脚手架演进为多租户低代码平台 **「元搭」**（Yuán Dā）。权威基线已切至 [`lowcode-ai`](https://github.com/max-yuuuu/lowcode-ai.git)（remote 名 `lowcode-ai`），上游 PR 不再等合并；完整方案见 [元搭 · 低代码平台完整方案](docs/lowcode-platform-proposal.md)。脚手架本身继续承担三重身份 —— 元搭自身（同一个 app：前端 UI + 后端 common/framework/system + 新增 `scaffold-lowcode`）、生成项目的初始框架（裁剪后的固定代码快照）、上游开源同步通道。
-
-## 元搭演进
-
-**层级**：租户 → 项目 → 模型 → 页面
-
-**关键口径**（细节与表结构、API、流程图见方案文档）：
-
-- 平台就长在本仓库：低代码能力新增 `scaffold-lowcode` 模块承载，scaffold 同时是元搭底座与生成项目的模板来源。
-- **平台不托管项目运行时**：它是研发期工具。发布 = 生成代码 + 提交 + 推送到租户登记的 Git 仓库**生成分支**；进主干由人在平台内发起「合并请求」，选源/目标分支、看文件 diff、确认才合并，平台不自动合并、永不 force-push。
-- 权限码前缀分两类：`platform:` 是平台运营专属（租户管理、租户参数，不下发给租户），`lowcode:` 是租户自己的开发功能（项目、模型、页面），随菜单模板复制到每个租户。平台新增租户可见菜单后，已有租户要在租户管理点「补齐资产」。
-- 租户自助注册即开通：`POST /api/auth/register`（匿名 + 验证码）建租户、管理员账号、内置 `tenant_admin` 角色与该租户的菜单树，并直接回登录令牌；管理员账号要求全局唯一。注意该接口默认公开，对外暴露前先决定是否加审核开关。
-- 多租户数据隔离：平台元数据与 `sys_*` 同库，`lc_` 前缀 + `tenant_id` 字段隔离；业务库随生成项目自带，平台不连（建表 SQL 推仓库由项目自己迁移）。运行时由 MyBatis-Plus `TenantLineInnerInterceptor` 按**表白名单**自动注入 `tenant_id`（PR 2 已落，新增带 `tenant_id` 的表必须同步登记，单测反向校验）；`super_admin` 看别的租户走会话内「切换租户」重签 JWT，不提供无租户条件的旁路查询。
-- Git 凭据走主机级 SSH 密钥，数据库只存 `repo_url` 与分支名；Git 操作全部用 JGit，不经 shell。
-- 代码生成用 FreeMarker 模板替换现有 `GeneratorService` 的 StringBuilder 拼接，生成**完整可运行 CRUD**（Controller / Service / Mapper / Vue 页面 / API / 菜单 SQL），而非当前的 7 份骨架文件。生成物按所有权分三档：A 固定（初始化后平台不碰）、B 纯生成（每次覆盖、约定人工不改）、C 扩展点（生成一次骨架后平台不碰，业务逻辑写这里）。原 `CUSTOM-START/END` 文本级合并机制取消。
-- 页面设计器采用拖拽 + 配置融合：流式布局画布摆放容器与控件、支持嵌套、右侧属性面板配样式和数据绑定，产出结构化 JSON；**自研，不引 LowCodeEngine**（选型依据见方案 §3.6）。
-- 增量发布：文件哈希对比只写变更文件；路由通过 `sys_menu` + `import.meta.glob` 自动注册，无需改前端代码。
-- 组件物料：抽 **`@scaffold/ui`** 包（本仓库 `packages/scaffold-ui` + npm workspaces），平台与每个生成项目共用同一个包 —— 组件源码不再拷进项目，升级从搬 diff 降为 bump 版本号。带数据的组件（`DictSelect`/`UserSelect`/`PermissionButton`）靠 `installScaffoldUi(app, {http, permission, dict})` 注入宿主能力，需先解 28 处对 `@/api`、`@/data`、`@/directives` 的 import。发布走 GitHub git tag 依赖。不存在 fork：平台前端就是 scaffold-vue 宿主，低代码视图进 `src/views/lowcode/**`。
-- 每个生成项目只有一个业务模块 `scaffold-business`（初始化时预置进 pom），生成代码进它的子包 —— 否则每次发布都要改 A 档 pom，"固定代码不随发布变动"就破了。
-- 字段类型映射只有一份：`com.scaffold.lowcode.model.FieldType` 定义类型 → Java 类型 / 列类型 / 默认控件，保存时算好落库，前端读 `/api/lowcode/models/meta`，改这张表等于改所有已生成项目未来发布的产物，所以逐条有单测钉死。
-- 模型（`lc_model` / `lc_field`）是**代码生成器的输入（期望态）**，不是"模型管理"业务功能；判据：「这段逻辑能不能只靠字段名 + 类型推导出来？」能 → 进模型生成，不能 → 进 C 档扩展点手写。页面与模型的耦合只在 `field_code`。
-- 接口生成边界：标准 CRUD 六端点由模型直接推导；自定义接口（状态流转、批量、聚合、跨实体）一律走扩展点不生成；**flow / 流程编排 / 状态机元数据化本期不做**。
-- 版本与回滚：每次发布打 tag，支持文件级 / 页面级 / 发布级三级回滚，一律以 `revert` 新提交实现，不倒带分支历史。
-
-**当前阶段**：P0-A 多租户地基（`lc_tenant`、`sys_*` 加 `tenant_id` 与复合唯一键、`TenantContext` / `TenantFilter` / JWT `tenantId` claim / 登录三段校验）与 **P0-B 租户隔离收口**（租户 SQL 拦截器、`super_admin` 切换租户旁路、`lc_tenant_config`、`scaffold-lowcode` 模块与租户管理 / 租户参数页面）均已完成，含**租户自助注册**：登录页可切换到注册表单，提交即开通租户（建租户 + 管理员账号 + `tenant_admin` 角色 + 复制平台业务菜单 / 字典 / 参数）并直接进入。P1（PR 3）也已完成：`lc_project` + 仓库地址协议白名单 + 项目管理页面、`lc_model` / `lc_field` + 模型与字段配置页面（字段类型 → Java / 列类型映射的唯一事实源是 `FieldType` 枚举），手工新增租户时填了管理员就走同一套开通流程。**PR 4 已完成**：JGit 接入（`GitGateway` / `JGitGateway`，凭据走主机 SSH 密钥、不入库）、仓库连通性检查、按代码里的裁剪清单产出交付快照并推送到项目的发布分支（`sync_status 0→1→2`，异常态 3/4/5 带 `sync_message`），以及 `scaffold-business` 空壳模块预置。交付产物已实测「能编译、能起、能登录，且不含 `/tool` 页面与 `lc_project` 等平台元数据表」。下一步 PR 4B —— 抽 `@scaffold/ui` 组件包（PR 5 的硬前置）。
 
 ## 开发入口
 
-- [项目地图](PROJECT_MAP.md)：按功能定位页面、接口、服务、SQL 和权限。
 - [设计规范](DESIGN.md)：珍珠玻璃主题、组件复用及交互规范。
-- [开发约定](AGENTS.md)、[更新日志](changelog.md)。
-- [元搭 · 低代码平台完整方案](docs/lowcode-platform-proposal.md)：多租户层级、可视化设计器、代码生成、发布与仓库合并请求。
+- [开发约定](AGENTS.md)。
 - [后端架构](docs/backend-architecture.md)、[前后端接口约定](docs/frontend-backend-integration.md)、[前端架构](docs/admin-redesign-architecture.md)。
 - [Docker 部署指南](docs/docker-deployment.md)：Compose 一键编排前端 / 后端 / Redis / 可选 MySQL。
 
@@ -42,7 +15,7 @@
 | 目录 | 用途 | 技术栈 |
 | --- | --- | --- |
 | `scaffold-system` | 后端 Maven 多模块工程 | Java 17+、Spring Boot 3.5、MyBatis、MySQL、Redis、JWT |
-| `scaffold-vue` | 管理后台 | Vue 3、TypeScript、Vite 6、Vue Router 4、GSAP 3，自有组件库 |
+| `scaffold-vue` | 管理后台（宿主 app） | Vue 3、TypeScript、Vite 6、Vue Router 4、GSAP 3；外壳、路由、登录与业务页面 |
 | `scaffold-system/sql` | 首次初始化脚本 | `V1__init_schema.sql` 建表，`V2__seed_data.sql` 初始化数据，`V3__system_resource_menu.sql` 补资源监测菜单，`V4__platform_tenant.sql` 补租户参数表与平台管理菜单（含存量库的 `sys_menu` 自增迁移）；`sql/verify/` 是双租户验收数据，**不自动导入** |
 | `docs` | 当前架构说明 | 后端架构、前后端接口约定和前端组件架构 |
 
@@ -84,13 +57,15 @@ java -jar scaffold-admin/target/scaffold-admin-0.1.0-SNAPSHOT.jar
 ```
 
 ```bash
-# 在 scaffold-vue 目录启动前端；首次使用先 npm ci
+# 在 scaffold-vue 目录启动前端；首次使用先 npm install
 npm run dev
 ```
 
 浏览器访问 `http://localhost:5173`，后端本地端口为 `8080`；前端统一通过 `/api` 代理访问后端。
 
 需要整套容器化部署（前端 nginx + 后端 + Redis + 可选 MySQL）时见 [Docker 部署指南](docs/docker-deployment.md)，本机开发仍按上面的命令启动。
+
+本机反复启停后端时的几条硬事实写在同一份指南的「本地直接跑进程（不起容器）的几条事实」一节：重打 jar 要 `clean package`（增量构建可能不重打 fat jar）、`JWT_SECRET` 一变所有会话就 401、启动变量请固化成不入库的 `.env.local` 而不是从旧进程 `ps eww` 里抓、测试用 `3316`/`6380` 别撞业务库、改包内组件源码宿主即时生效不用重装。
 
 种子库管理员为 `admin`，开发密码为 `admin123`；仅用于本地开发，接入实际环境前请修改密码并配置自己的数据库与 Redis 凭据。种子组织和用户为示例，电话留空，邮箱使用 `example.com`。验证码为服务端渲染的 PNG 图片，答案只存 Redis 不回传明文，按图上字符输入；`CAPTCHA_ENABLED=false` 可整关（后端集成测试即以此关闭，无需读图）。超级管理员可见全部启用且可见的已注册菜单，并拥有全部操作权限；其余种子角色默认未授予菜单，需在角色管理中分配。无可用菜单的账号登录后显示“暂未分配可用菜单”。
 

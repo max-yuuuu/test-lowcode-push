@@ -1,21 +1,21 @@
 <script setup lang="ts">
 import { computed, nextTick, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import Icon from '@/components/Icon.vue'
-import { Button, Drawer, Field, Segmented, Select, StatusTag, Switch, Tag, TextInput, type Column } from '@/components/ui'
-import { DictSelect, FormDialog, ListPage, PermissionButton, PermissionTree } from '@/components/business'
-import PermissionMatrix, { type MatrixRole } from '@/components/business/PermissionMatrix.vue'
-import PermissionTrace from '@/components/business/PermissionTrace.vue'
-import { invalidatePermissionGraph } from '@/composables/permissionGraph'
+import Icon from '@yuanda-lowcode-ai/scaffold-ui/components/Icon.vue'
+import { Button, Drawer, Field, Segmented, Select, StatusTag, Switch, Tag, TextInput, type Column } from '@yuanda-lowcode-ai/scaffold-ui/components/ui'
+import { DictSelect, FormDialog, ListPage, PermissionButton, PermissionTree } from '@yuanda-lowcode-ai/scaffold-ui/components/business'
+import PermissionMatrix, { type MatrixRole } from '@yuanda-lowcode-ai/scaffold-ui/components/business/PermissionMatrix.vue'
+import PermissionTrace from '@yuanda-lowcode-ai/scaffold-ui/components/business/PermissionTrace.vue'
+import { invalidatePermissionGraph } from '@yuanda-lowcode-ai/scaffold-ui/composables/permissionGraph'
 import { systemApi } from '@/api'
-import { useListPage } from '@/composables/list'
-import { useViewMode } from '@/composables/view'
-import { hasPermission } from '@/directives/permission'
-import { confirm } from '@/composables/confirm'
-import { pushToast, toastError } from '@/composables/toast'
-import { revealCascade } from '@/composables/motion'
+import { useListPage } from '@yuanda-lowcode-ai/scaffold-ui/composables/list'
+import { useViewMode } from '@yuanda-lowcode-ai/scaffold-ui/composables/view'
+import { hasPermission } from '@/composables/permission'
+import { confirm } from '@yuanda-lowcode-ai/scaffold-ui/composables/confirm'
+import { pushToast, toastError } from '@yuanda-lowcode-ai/scaffold-ui/composables/toast'
+import { revealCascade } from '@yuanda-lowcode-ai/scaffold-ui/composables/motion'
 import type { Menu } from '@/data'
-import { pattern, required, validate } from '@/utils/validate'
+import { pattern, required, validate } from '@yuanda-lowcode-ai/scaffold-ui/utils/validate'
 
 interface RoleRow {
   id: number
@@ -300,7 +300,7 @@ async function savePermission() {
           <PermissionButton perm="system:role:edit" icon-only icon="shield" label="分配权限" @click="openPermission(row)" />
           <PermissionButton perm="system:role:remove" icon-only icon="trash" label="删除" danger @click="remove(row)" />
         </template>
-        <span v-else class="faint" style="font-size: 12px" title="内置角色拥有全部权限，不可修改">全部权限</span>
+        <span v-else class="faint" style="font-size: 12px" title="内置角色的权限由平台开通流程维护，不可在此修改">内置授权</span>
       </div>
     </template>
 

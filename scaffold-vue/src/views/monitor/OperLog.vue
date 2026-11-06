@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { Drawer, Field, Metric, SectionLabel, Segmented, Select, Tag, TextInput, type Column } from '@/components/ui'
-import { ListPage, PermissionButton } from '@/components/business'
-import TrendChart from '@/components/charts/TrendChart.vue'
-import Swimlane from '@/components/charts/Swimlane.vue'
+import { Drawer, Field, Metric, SectionLabel, Segmented, Select, Tag, TextInput, type Column } from '@yuanda-lowcode-ai/scaffold-ui/components/ui'
+import { ListPage, PermissionButton } from '@yuanda-lowcode-ai/scaffold-ui/components/business'
+import TrendChart from '@yuanda-lowcode-ai/scaffold-ui/components/charts/TrendChart.vue'
+import Swimlane from '@yuanda-lowcode-ai/scaffold-ui/components/charts/Swimlane.vue'
 import { systemApi, type OperLogStats, type OperTimeline, type StatsRange } from '@/api'
-import { useListPage } from '@/composables/list'
-import { confirm } from '@/composables/confirm'
-import { pushToast, toastError } from '@/composables/toast'
-import { revealCascade } from '@/composables/motion'
+import { useListPage } from '@yuanda-lowcode-ai/scaffold-ui/composables/list'
+import { confirm } from '@yuanda-lowcode-ai/scaffold-ui/composables/confirm'
+import { pushToast, toastError } from '@yuanda-lowcode-ai/scaffold-ui/composables/toast'
+import { revealCascade } from '@yuanda-lowcode-ai/scaffold-ui/composables/motion'
 
 interface OperRow {
   id: number
