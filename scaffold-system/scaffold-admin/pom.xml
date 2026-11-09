@@ -27,12 +27,24 @@
             <artifactId>scaffold-business</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.scaffold</groupId>
+            <artifactId>scaffold-admin-core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.github.xiaoymin</groupId>
             <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- 共享登录夹具 TestAuthClient：底座与平台两个启动模块的 IT 都用它，住在 admin-core 的 test-jar -->
+        <dependency>
+            <groupId>com.scaffold</groupId>
+            <artifactId>scaffold-admin-core</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
             <scope>test</scope>
         </dependency>
     </dependencies>

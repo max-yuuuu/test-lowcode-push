@@ -7,13 +7,15 @@
 | 层 | 入口 | 中文职责 |
 | --- | --- | --- |
 | 请求 | `src/api/http.ts`、`session.ts`、各业务 API | 统一响应、token、文件下载与 401 |
-| 会话与路由 | `src/composables/auth.ts`、`src/router/index.ts` | 用户、权限、服务端菜单、页面注册与退出 |
-| 通用状态 | `src/composables/list.ts`、`dict.ts`、`dept.ts`、`dateValue.ts`、`popover.ts`、`upload.ts` | 查询、分页、导出、引用选项与缓存；日期值与显示分离、浮层定位与键盘关闭、上传传输与状态机 |
-| 基础控件 | `src/components/ui` | 统一按钮、输入、数字、多行文本、下拉、树形下拉、日期与区间、标签页、表格、标签、上传与图片预览、只读描述列表、浮层 |
-| 业务组件 | `src/components/business` | 列表、表单、行操作（平铺 + 「更多」下拉）、权限、字典、部门和用户选择 |
+| 会话与路由 | `src/composables/auth.ts`、`src/shell/`（routes、router、views、slots 与宿主申报入口） | 用户、权限、服务端菜单、页面注册与退出 |
+| 通用状态 | `@yuanda-lowcode-ai/scaffold-ui/composables`（`list`、`dict`、`dept`、`dateValue`、`popover`、`upload` 等） | 查询、分页、导出、引用选项与缓存；日期值与显示分离、浮层定位与键盘关闭、上传传输与状态机 |
+| 基础控件 | `@yuanda-lowcode-ai/scaffold-ui/components/ui` | 统一按钮、输入、数字、多行文本、下拉、树形下拉、日期与区间、标签页、表格、标签、上传与图片预览、只读描述列表、浮层 |
+| 业务组件 | `@yuanda-lowcode-ai/scaffold-ui/components/business` | 列表、表单、行操作（平铺 + 「更多」下拉）、权限、字典、部门和用户选择 |
 | 外壳 | `src/components/layout` | 导航、搜索、移动侧栏、主题和账号操作 |
 | 页面 | `src/views` | 业务字段、动作、校验与差异展示 |
-| 视觉与交互 | `src/styles`、`appearance.ts`、`motion.ts`、`focus.ts` | 六层样式、主题、密度、动效及浮层焦点 |
+| 视觉与交互 | `@yuanda-lowcode-ai/scaffold-ui/theme.css` 与包内 `appearance.ts`、`motion.ts`、`focus.ts` | 六层样式、主题、密度、动效及浮层焦点 |
+
+组件与通用状态住在 npm 包 `@yuanda-lowcode-ai/scaffold-ui`，不在本项目的 `src/components` 下：宿主 `src/components` 只有外壳与 `NeuralNet.vue`。带数据的组件（`DictSelect`、`UserSelect`、`PermissionButton`）由 `installScaffoldUi({ http, permission, dict })` 注入宿主能力，适配层在 `src/api/scaffold-providers.ts`。
 
 ## 页面结构
 
@@ -35,4 +37,5 @@
 
 路由切换的 `<Transition mode="out-in">` 必须作用在元素根上，因此 `AppShell.vue` 在 `<component :is>` 外垫了一层 `.route-frame`：`ListPage` 与弹窗是兄弟节点的片段页面否则不会触发 leave / enter 钩子，`isLeaving` 永真会让新页面渲染成注释占位、`.reveal` 停在 `opacity: 0`（肉眼是白屏）。`motion.ts` 的 `pageRootOf` 把补间与 `is-entrance-ready` 落回容器内的 `.page`，`pageEnter` / `pageLeave` 用幂等 `finish()` 加兜底定时器保证 `done()` 一定放行，`ListPage` 另在 `onMounted` 自显现一次兜住钩子不触发的情况。
 
-各模块、路径、接口与权限见根目录 `PROJECT_MAP.md`，视觉参数以 `DESIGN.md` 和实际样式令牌为准。
+视觉参数以 `DESIGN.md` 和实际样式令牌为准。
+

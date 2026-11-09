@@ -1,3 +1,14 @@
+-- ==============================================================================================
+-- V1__init_schema.sql — 底座建表基线（交付项目只用 V1–V3）
+--
+-- lc_tenant 留在底座的原因：AuthService.login() 每次登录都查租户是否停用，交付项目同样是多租户登录链，
+--   这张表必须随底座下发（PR 4 偏离 1 的既有决定，搬迁时不清掉）。它无 tenant_id，按主键与编码定位。
+--   租户级参数表与其余 lc_ 前缀的平台元数据（模型、页面、发布、合并请求、升级指纹等）归平台 SQL。
+-- 菜单 ID 段：底座占 1–299（1 工作台、100–108 系统管理、200–202 系统监控及按钮段 1011–2021/1081）；
+--   平台占 300 起（300/301 系统工具、400 平台管理、500 低代码），约定见平台侧建表脚本的各文件头。
+-- 幂等：CREATE TABLE IF NOT EXISTS，可重复执行。
+-- ==============================================================================================
+
 CREATE TABLE IF NOT EXISTS lc_tenant (
     id BIGINT NOT NULL AUTO_INCREMENT COMMENT '租户 ID',
     tenant_code VARCHAR(64) NOT NULL COMMENT '租户编码，用于展示与外部标识',
@@ -252,4 +263,3 @@ CREATE TABLE IF NOT EXISTS sys_file (
     PRIMARY KEY (id),
     KEY idx_sys_file_tenant (tenant_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文件信息表';
-

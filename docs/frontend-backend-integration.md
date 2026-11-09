@@ -1,6 +1,7 @@
 # 前后端接口约定
 
-前端统一通过 `src/api` 请求 `/api`，开发服务器代理到本地 Spring Boot。接口、页面与表的完整定位见根目录 `PROJECT_MAP.md`。
+前端统一通过 `src/api` 请求 `/api`，开发服务器代理到本地 Spring Boot。接口清单就是本文这几节；页面与接口的对应关系按 `sys_menu.component` 与 `src/views` 的同名约定走，见 `admin-redesign-architecture.md`。
+
 
 ## 响应与分页
 
@@ -35,7 +36,6 @@
 | 日志统计与泳道 | `system.ts` 的 `operLogs.stats / timeline`、`loginLogs.stats` | `/monitor/oper-logs/stats`、`/monitor/oper-logs/timeline`、`/monitor/login-logs/stats` |
 | 工作台 | `portal.ts` | `/dashboard/summary` |
 | 服务健康（登录页） | `portal.ts` 的 `health` | `/health`（匿名） |
-| 代码生成 | `portal.ts` | `/tool/generator` 下的表、字段、导入、预览、生成与下载 |
 
 ## 登录与权限
 
@@ -124,14 +124,10 @@
 | `blocks[].count` / `failed` / `maxCost` | 块内次数 / 失败次数 / 最大耗时毫秒 |
 | `blocks[].ids` | 块内日志 ID，最多 50 个，用于定位明细 |
 
-## 代码生成契约与边界
-
-预览返回 `files`（文件列表）、`activeFile`（默认文件名）、`code`（默认文件代码）；每个文件含 `name`（文件名）、`path`（相对路径）、`code`（该文件代码）。前端按完整路径切换，所有文件都可查看。
-
-生成表字段：`tableName`（表名）、`tableComment`（说明）、`className`（实体名）、`module`（模块名）、`businessName`（业务名）、`synced`（配置确认标记）。配置保存当前支持说明与确认标记，字段信息只展示；ZIP 为 7 份开发骨架，业务 CRUD 尚需实现和验证，不自动写入项目。
 
 ## 验证入口
 
-后端集成测试在 `scaffold.security.captcha.enabled=false` 下运行（`scaffold-admin` 的 surefire 以系统属性注入），登录夹具改为断言该开关已关闭并提交空验证码——答案只在 Redis 里，测试读不了图；覆盖认证、接口权限、数据范围、管理写入、日志、日志统计与泳道、工作台与生成器；前端单测验证统一请求与契约。`scaffold-vue/scripts/session-regression.py` 验证浏览器中的旧请求晚到、慢退出、低权限与无菜单账号。
+后端集成测试在 `scaffold.security.captcha.enabled=false` 下运行（启动模块的 surefire 以系统属性注入），登录夹具改为断言该开关已关闭并提交空验证码——答案只在 Redis 里，测试读不了图；覆盖认证、接口权限、数据范围、管理写入、日志、日志统计与泳道、工作台；前端单测验证统一请求与契约。`scaffold-vue/scripts/session-regression.py` 验证浏览器中的旧请求晚到、慢退出、低权限与无菜单账号。
+
 
 测试使用独立本地数据库；变更公共能力后补受影响页面的实际操作验证。

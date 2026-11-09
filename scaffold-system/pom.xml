@@ -32,6 +32,7 @@
         <module>scaffold-framework</module>
         <module>scaffold-system</module>
         <module>scaffold-business</module>
+        <module>scaffold-admin-core</module>
         <module>scaffold-admin</module>
     </modules>
 
@@ -68,6 +69,11 @@
             <dependency>
                 <groupId>com.scaffold</groupId>
                 <artifactId>scaffold-business</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.scaffold</groupId>
+                <artifactId>scaffold-admin-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

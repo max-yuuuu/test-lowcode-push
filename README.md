@@ -1,6 +1,7 @@
 # 通用后台管理脚手架
 
-用于后续后台管理系统开发的 Spring Boot + Vue 底座。包含认证、菜单与按钮权限、数据权限、组织管理、字典、参数、日志、工作台和代码生成骨架；新增项目在此基础上实现业务模块。
+用于后续后台管理系统开发的 Spring Boot + Vue 底座。包含认证、菜单与按钮权限、数据权限、组织管理、字典、参数、日志和工作台；新增项目在此基础上实现业务模块。
+
 
 
 ## 开发入口
@@ -16,10 +17,11 @@
 | --- | --- | --- |
 | `scaffold-system` | 后端 Maven 多模块工程 | Java 17+、Spring Boot 3.5、MyBatis、MySQL、Redis、JWT |
 | `scaffold-vue` | 管理后台（宿主 app） | Vue 3、TypeScript、Vite 6、Vue Router 4、GSAP 3；外壳、路由、登录与业务页面 |
-| `scaffold-system/sql` | 首次初始化脚本 | `V1__init_schema.sql` 建表，`V2__seed_data.sql` 初始化数据，`V3__system_resource_menu.sql` 补资源监测菜单，`V4__platform_tenant.sql` 补租户参数表与平台管理菜单（含存量库的 `sys_menu` 自增迁移）；`sql/verify/` 是双租户验收数据，**不自动导入** |
+| `scaffold-system/sql` | 首次初始化脚本 | `V1__init_schema.sql` 建表，`V2__seed_data.sql` 初始化数据，`V3__system_resource_menu.sql` 补资源监测菜单；初始化时这三份按文件名顺序导入 |
 | `docs` | 当前架构说明 | 后端架构、前后端接口约定和前端组件架构 |
 
-当前包含工作台和 11 个管理页面；建筑、工作流模块已移除。
+当前包含工作台与 10 个管理页面：系统管理 8（用户、角色、部门、菜单、字典、参数、岗位、资源监测）与系统监控 2（操作日志、登录日志）。建筑、工作流模块已移除。
+
 
 ## 本地启动
 
@@ -48,7 +50,7 @@ export JWT_SECRET="$(openssl rand -hex 32)"
 
 使用 IDE 时将密钥配置到运行环境。未配置或不足 32 字节时后端启动失败；保留同一密钥可让重启前的有效 token 继续验签，更换密钥会使旧 token 失效。
 
-首次创建空的 `scaffold_system` 库后，按顺序导入 `sql/` 顶层的四份 `V*__*.sql`（`sql/verify/` 子目录不在其中）；mysql 客户端须使用 `--default-character-set=utf8mb4`，并通过 `--init-command="SET time_zone='+08:00'"` 设置会话时区。也可在 IDE 运行 `scaffold-admin` 中的 `com.scaffold.admin.util.DbInit`，该工具使用同一组 `DB_*` 变量并按版本顺序初始化（自动发现顶层 `V*__*.sql`，不递归子目录）；参数 `fix` 会删除整个目标库，仅在核实库名、备份且明确同意重建时使用。
+首次创建空的 `scaffold_system` 库后，按顺序导入 `sql/` 顶层的三份 `V*__*.sql`（只导顶层，不递归子目录）；mysql 客户端须使用 `--default-character-set=utf8mb4`，并通过 `--init-command="SET time_zone='+08:00'"` 设置会话时区。也可在 IDE 运行 `scaffold-admin-core` 中的 `com.scaffold.admin.util.DbInit`，该工具使用同一组 `DB_*` 变量并按版本顺序初始化（自动发现顶层 `V*__*.sql`，不递归子目录）；参数 `fix` 会删除整个目标库，仅在核实库名、备份且明确同意重建时使用。
 
 ```bash
 # 在 scaffold-system 目录构建与启动后端
@@ -56,10 +58,12 @@ mvn -pl scaffold-admin -am package -DskipTests
 java -jar scaffold-admin/target/scaffold-admin-0.1.0-SNAPSHOT.jar
 ```
 
+
 ```bash
 # 在 scaffold-vue 目录启动前端；首次使用先 npm install
 npm run dev
 ```
+
 
 浏览器访问 `http://localhost:5173`，后端本地端口为 `8080`；前端统一通过 `/api` 代理访问后端。
 
@@ -78,7 +82,6 @@ npm run dev
 5. 按角色配置菜单和数据范围，验证低权限账号的真实接口拒绝行为、查询、分页、导出及表单校验。
 6. 同步项目地图、相关接口说明和更新日志。
 
-代码生成初始配置为空，按需导入当前数据库的真实表，支持字段信息查看、配置说明保存、7 个文件预览和 ZIP 下载。输出为开发骨架：Controller、Service、Mapper 的业务 CRUD 仍需实现，前端页面需按统一组件规范补齐；下载不会自动写入本工程。
 
 ## 验证
 
@@ -104,6 +107,7 @@ npm run build
 # 已安装 Python Playwright 与 Chromium 时，可验证真实浏览器会话与权限
 python3 scripts/session-regression.py
 ```
+
 
 浏览器回归脚本只创建并删除自己生成的测试角色和用户，不清空表（用户与角色按逻辑删除，行会留在表里、`deleted` 置 1）；管理员密码可通过 `SCAFFOLD_TEST_PASSWORD` 覆盖。脚本无法读验证码图片，因此**要求后端以 `CAPTCHA_ENABLED=false` 启动**（与 `scaffold-admin` 的 surefire 同一口径），否则登录第一步就会失败。测试与构建成功不能代替业务页面验收。
 

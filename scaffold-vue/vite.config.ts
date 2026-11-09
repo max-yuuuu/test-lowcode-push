@@ -17,6 +17,8 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    // 预检到 spawn 之间隔着分钟级构建，被占时要当场报错而不是漂到 5174（与平台侧同口径）
+    strictPort: true,
     open: true,
     proxy: {
       '/api': {

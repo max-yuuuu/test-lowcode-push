@@ -7,14 +7,14 @@
   "scripts": {
     "dev": "vite",
     "test:api": "node --test --experimental-strip-types src/api/__tests__/*.test.ts",
-    "test:unit": "node --test --experimental-strip-types src/api/__tests__/*.test.ts",
+    "test:unit": "node --test --experimental-strip-types src/api/__tests__/*.test.ts src/shell/__tests__/*.test.ts src/data/__tests__/*.test.ts",
     "typecheck": "vue-tsc --noEmit",
     "bundle": "vite build",
     "build": "npm run typecheck && npm run bundle",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@yuanda-lowcode-ai/scaffold-ui": "^1.0.0",
+    "@yuanda-lowcode-ai/scaffold-ui": "^1.2.0",
     "gsap": "^3.15.0",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0"
