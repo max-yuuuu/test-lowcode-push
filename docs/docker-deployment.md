@@ -2,6 +2,7 @@
 
 脚手架用一份 Compose 文件编排四个服务：前端 nginx（静态托管 + `/api` 反向代理 + SPA 回退）、后端 Spring Boot jar、Redis、以及可选的内置 MySQL。默认面向单台 Linux/macOS 主机自托管；数据库也可复用宿主机已有实例。
 
+
 本指南的镜像构建、两种启动模式与文末验证命令均在 macOS（Docker Desktop 29.5.3 / Compose v5.1.4，apple silicon）实测通过，验证记录见文末。
 
 相关文件：
@@ -55,7 +56,8 @@ docker compose up -d --build
 
 `DB_HOST=host.docker.internal` 与 `DB_PORT` 必须成对设置：`DB_PORT` 是后端实际连接的端口，漏改时它会退回默认 3306，打到宿主机上另一个 MySQL 实例（表现为登录报「系统内部错」而不是连不上内置库）。内置 MySQL 的宿主机映射端口是另一个变量 `MYSQL_HOST_PORT`，走外部模式时两者要指到同一个数字。
 
-外部库不会被自动初始化：需先按 README 的口径导入 `sql/` 顶层的三份 SQL（交付项目只用 `V1`–`V3`；平台自身再加 `V4`–`V7`）（客户端带 `--default-character-set=utf8mb4`、会话 `SET time_zone='+08:00'`），或直接用 `scaffold-admin` 里的 `com.scaffold.admin.util.DbInit`（读同一组 `DB_*` 变量）。自动导入只在内置 `mysql` 服务首次建卷时发生。**升级已有部署**时（例如 PR 2 的 `V4`：新增 `lc_tenant_config`、平台管理菜单，并把 `sys_menu.id` 改成自增），必须手工对目标库执行新增的 `V*.sql` —— 脚本按幂等口径写（`CREATE TABLE IF NOT EXISTS` + `INSERT IGNORE`，重复执行安全），不执行就会出现表缺失或菜单不显示。
+外部库不会被自动初始化：需先按 README 的口径导入 `sql/` 顶层的 `V1`–`V3`（客户端带 `--default-character-set=utf8mb4`、会话 `SET time_zone='+08:00'`），或用建库工具 —— `scaffold-admin-core` 里的 `com.scaffold.admin.util.DbInit`，它读同一组 `DB_*` 变量、sql 目录向上查找、写法幂等。自动导入只在内置 `mysql` 服务首次建卷时发生。**升级已有部署**时（例如新增的 `V*.sql`：新表、菜单、把 `sys_menu.id` 改成自增等），必须手工对目标库执行新增脚本 —— 脚本按幂等口径写（`CREATE TABLE IF NOT EXISTS` + `INSERT IGNORE`，重复执行安全），不执行就会出现表缺失或菜单不显示。
+
 低代码发布生成的建表与菜单脚本落在 `scaffold-system/sql/pages/`（`{表名}_table.sql` 与 `{表名}_menu.sql`，子目录，`docker-entrypoint-initdb.d` 不递归，所以永不自动执行），同样按上面的口径手工执行，**客户端一定要带 `--default-character-set=utf8mb4`**：不带时容器内 locale 为 `C`，客户端按 latin1 解析 UTF-8 字节，中文列注释与菜单名会被二次编码存进库（页面显示成「è®¢å•ä¸»è¡¨」），与下一段 `deploy/mysql-client.cnf` 的由来是同一个坑。脚本本身可重复执行（建表用 `IF NOT EXISTS`，菜单按 `permission` 判重）。
 
 ## 环境变量
@@ -104,6 +106,8 @@ docker compose --profile mysql down -v   # 连 MySQL/Redis 数据卷一起删除
   ```
 
   需要给人抄的模板放 `.env.example`（入库），真实值永远只在 `.env.local` 里。
+
+
 - **本机端口归属**：`3306` / `6379` 是业务库与业务 Redis，本脚手架的测试与本地实例用 `3316` / `6380`（容器 `scaffold-it-mysql` / `scaffold-it-redis`）。跑集成测试前先确认端口归属，别把业务库当测试库写进去。登录验证码答案与会话状态都在这个 Redis 里，清了 Redis 等于所有人重新登录、验证码全部作废。
 - **前端命令在 `scaffold-vue` 目录跑**（`npm run dev|build|test:unit`）。组件与珍珠玻璃主题是 npm 依赖 `@yuanda-lowcode-ai/scaffold-ui`，升级就是改 `package.json` 里的版本号再 `npm install`；本项目不是 workspace，仓库根没有清单。
 
@@ -139,15 +143,3 @@ Docker 守护进程不读宿主机 shell 的代理变量，`docker build` 拉基
 1. 配国内加速器：在 `~/.docker/daemon.json` 加 `"registry-mirrors": ["https://docker.m.daocloud.io", "https://docker.1ms.run"]`，然后 `docker desktop restart` 生效。
 2. 在 Docker Desktop → Settings → Resources → Proxies 填本机代理（`ProxyHTTPMode` 需为 `manual`，仅写 `HttpProxy` 不生效）。
 
-## 验证记录（2026-11-01）
-
-全部用独立 project name、独立卷、错开端口（`WEB_PORT=80/8181/8182/8183/8186`、`MYSQL_HOST_PORT=3316~3322`）跑通，**未读写本机业务库 `scaffold_system`**；结束后已 `down -v` 清理容器与卷，本机 `scaffold-mysql`、`dsh` 容器状态正常。
-
-- 两个镜像构建成功：后端 471 MB、前端 77 MB；`docker compose config` 在带 / 不带 `mysql` profile 下均校验通过。
-- **按本指南原文跑一遍**：`cp .env.example .env` + 改 `.env` + `docker compose --profile mysql up -d --build`（默认 project name、默认卷名 `scaffold-master_mysql-data`），四个容器全 healthy，登录与列表查询通过，文末「验证方法」的每条命令逐条照做均得到预期输出。
-- **文档默认形态**（`--profile mysql` + `WEB_PORT=80`）整套拉起：mysql / redis healthy → backend healthy（`restarts=0`，日志零条 `Connection refused`）→ frontend 绑定 80 端口 running。
-- **外部 MySQL 形态**（`DB_HOST=host.docker.internal`、`DB_PORT=3321` 配 `MYSQL_HOST_PORT=3321`）在容器内直接调用登录接口通过，`sys_login_log` 真实落库，证明两个端口变量成对设置后连接路径正确；不带 profile 单起 `redis backend` 时 MySQL 不会被可选依赖反向拉起。
-- `/api/health` 返回 `status=UP` 且时间为 `+08:00`；`/api/auth/captcha` 返回 `captchaEnabled=true` 与 base64 PNG；缺验证码登录被拒（`code=400 验证码错误或已过期`）；无令牌访问列表接口 401；SPA 深链接 `/system/user`、`/tool/generator`、`/monitor/operlog` 均回退 200。
-- 关掉验证码后完成真实登录：取到 token、`/api/auth/me` 返回 35 条权限、`/api/auth/routes` 返回 `/dashboard`、`/system`、`/monitor`、`/tool` 四个顶级路由、`/api/system/users` 返回 3 条种子用户、导出接口返回 `text/csv` 带中文表头与中文数据。
-- 浏览器实测：登录页填账号密码 → 工作台侧栏渲染出全部菜单与「中午好，周明远」→ 用户管理表格渲染「周明远 / 平台架构部 / 超级管理员 / 2026-11-01」，控制台无任何报错。验证码开启形态下另测登录页，`img` 元素实际渲染出 130×44 的 `data:image/png` 验证码图。
-- 字符集回归：加 `deploy/mysql-client.cnf` 前 `sys_user.nickname` 入库为 `C3A5E28098…`（双重编码，页面显示乱码）；加后为 `E591A8E6988EE8BF9C`，与「周明远」的 UTF-8 字节完全一致，`@@character_set_database=utf8mb4`、排序规则 `utf8mb4_unicode_ci`，三份 SQL 导入后 `sys_menu` 39 行、`sys_dict_data` 7 行。

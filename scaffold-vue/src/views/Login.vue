@@ -17,8 +17,10 @@ const router = useRouter()
 const route = useRoute()
 
 const TENANT_KEY = 'scaffold.login.tenantCode'
-// 多租户下每次都要敲租户编码很烦，登录成功后记住最后一次
+// 多租户下每次都要敲租户编码很烦，登录成功后记住最后一次；单租户不读也不写，
+// 否则同源残留的旧编码会随隐藏表单提交，后端查不到租户直接拒登且用户无从自救
 const lastTenantCode = (() => {
+  if (!APP.multiTenant) return ''
   try { return sessionStorage.getItem(TENANT_KEY) ?? '' } catch { return '' }
 })()
 type AuthMode = 'login' | 'register'
@@ -148,7 +150,9 @@ async function submitLogin() {
   submitting.value = true
   try {
     await login({ username: form.username.trim(), password: form.password, tenantCode: form.tenantCode.trim() || undefined, captcha: form.captcha.trim(), captchaUuid: captchaUuid.value }, remember.value)
-    try { sessionStorage.setItem(TENANT_KEY, form.tenantCode.trim()) } catch { /* 存储不可用时忽略 */ }
+    if (APP.multiTenant) {
+      try { sessionStorage.setItem(TENANT_KEY, form.tenantCode.trim()) } catch { /* 存储不可用时忽略 */ }
+    }
     await enterApp()
   } catch (error) {
     await authFailed(error, '登录失败，请稍后重试')
@@ -349,7 +353,7 @@ onBeforeUnmount(() => {
               <Field label="账号" :error="errors.username">
                 <TextInput v-model="form.username" icon="user" placeholder="请输入账号" autocomplete="username" :invalid="!!errors.username" />
               </Field>
-              <Field label="租户编码" hint="账号在多个租户下重名时必填" :error="errors.tenantCode">
+              <Field v-if="APP.multiTenant" label="租户编码" hint="账号在多个租户下重名时必填" :error="errors.tenantCode">
                 <TextInput v-model="form.tenantCode" icon="layers" placeholder="单租户部署可留空" autocomplete="organization" :invalid="!!errors.tenantCode" />
               </Field>
               <Field label="密码" :error="errors.password">
@@ -382,7 +386,7 @@ onBeforeUnmount(() => {
             </Field>
             <div class="login-options">
               <Checkbox v-model="remember" label="记住登录状态" />
-              <Button variant="text" size="sm" @click="switchMode">{{ mode === 'login' ? '还没有租户？注册租户' : '已有账号？返回登录' }}</Button>
+              <Button v-if="APP.multiTenant" variant="text" size="sm" @click="switchMode">{{ mode === 'login' ? '还没有租户？注册租户' : '已有账号？返回登录' }}</Button>
             </div>
             <p v-if="formError" class="login-error" role="alert"><Icon name="alert" :size="15" />{{ formError }}</p>
             <div class="login-submit-slot">

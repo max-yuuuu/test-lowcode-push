@@ -1,0 +1,54 @@
+# 底座与平台两个薄启动模块共享的配置（方案 task2：application.yml 公共段下沉到 admin-core）。
+# 启动模块各自的 application.yml 只写 spring.application.name 与 spring.config.import: classpath:scaffold-core.yml，
+# 平台运行参数（scaffold.lowcode）留在平台启动模块自己的 application.yml 里，不进这份共享配置。
+spring:
+  jackson:
+    # 数据库连接把会话时区强制成 +08:00，Jackson 默认按 UTC 序列化 java.util.Date
+    # 会让日期整体早 8 小时（跨天的字段如注册日期会少一天），必须与会话时区对齐
+    time-zone: ${JSON_TIMEZONE:GMT+8}
+
+server:
+  port: 8080
+
+scaffold:
+  api-prefix: /api
+  jwt:
+    secret: "${JWT_SECRET}"
+    expires-seconds: 7200
+  security:
+    captcha:
+      # 关闭时登录不再校验图形验证码（集成测试用），生产保持开启
+      enabled: ${CAPTCHA_ENABLED:true}
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    call-setters-on-nulls: true
+
+---
+# dev profile：本地开发库与 Redis。两个启动模块共用同一组环境变量（DB_HOST/DB_PORT/DB_NAME/DB_USERNAME/DB_PASSWORD、REDIS_*）
+spring:
+  config:
+    activate:
+      on-profile: dev
+  main:
+    banner-mode: console
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:scaffold_system}?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:root}
+    hikari:
+      data-source-properties:
+        connectionTimeZone: "${DB_TIMEZONE:+08:00}"
+        forceConnectionTimeZoneToSession: true
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
+logging:
+  level:
+    root: info
+    com.scaffold: info

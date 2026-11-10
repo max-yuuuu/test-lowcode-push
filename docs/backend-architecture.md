@@ -7,14 +7,14 @@
 | `scaffold-common` | 统一响应、分页、业务异常 | `R`、`PageQuery`、`PageResult`、`BusinessException` |
 | `scaffold-framework` | 认证、会话、权限、数据范围、操作审计、异常与请求追踪 | `security`、`datascope`、`audit`、`handler`、`filter` |
 | `scaffold-system` | 用户、角色、组织、菜单、字典、参数、日志与工作台；日志统计与当日泳道 | `AuthController`、`SystemManagementController`、`DashboardController`、`MonitorController`、`MonitorStatsService` |
-| `scaffold-generator` | 真实表导入、生成配置、预览、ZIP 下载 | `GeneratorController`、`GeneratorService`、`GeneratorMapper` |
-| `scaffold-admin` | 启动、配置、初始化工具与集成测试 | `ScaffoldAdminApplication`、`DbInit` |
+| `scaffold-admin-core` | 装配与配置的共享库：健康检查、建库工具、公共配置与共享登录夹具（普通 jar，不 repackage） | `HealthController`、`DbInit`、`scaffold-core.yml`、`TestAuthClient` |
+| `scaffold-admin` | 底座启动模块与集成测试 | `ScaffoldAdminApplication` |
 
 建筑、工作流模块和 Flowable 依赖已移除。新增业务复用通用模块，不在 Controller 或 Service 重复实现基础安全与返回结构。
 
 ## 请求与安全
 
-请求经 TraceId 与 JWT 过滤器进入 Controller → Service → MyBatis Mapper → MySQL，普通 JSON 接口返回 `R<T>`；导出和生成 ZIP 使用文件响应。
+请求经 TraceId 与 JWT 过滤器进入 Controller → Service → MyBatis Mapper → MySQL，普通 JSON 接口返回 `R<T>`；导出使用文件响应。
 
 - JWT 与 Redis token 必须同时有效，退出撤销当前 token；每次登录的 JWT ID 独立，快速重新登录不会复用已撤销 token。
 - JWT 签名密钥通过必填环境变量 `JWT_SECRET` 配置，UTF-8 编码至少 32 字节且不能全为空白；缺失或长度不足会阻止启动，仓库不内置共享签名密钥。
@@ -24,12 +24,13 @@
 - `@RequiresPermission` 校验操作权限；超级管理员直接放行，普通角色必须启用且未删除，停用用户不能获得接口权限。
 - 菜单来自真实授权关系；超级管理员读取所有启用且可见的菜单，无需逐项授权新菜单。
 - `@DataScope`、`SystemDataScopeResolver` 与 `DataScopeCriteria` 当前接入用户查询和导出，新增业务须按业务表字段显式接入。
+- `TenantLineInnerInterceptor` 按**表白名单**给 SELECT / INSERT / UPDATE / DELETE 自动补 `tenant_id` 条件。名单是合成的：`ScaffoldTenantLineHandler.BASE_TABLES` 列底座那 11 张 `sys_*`，其余由 `TenantTableContributor` 追加。业务新增带 `tenant_id` 的表有两条登记路径：**直接加进 `BASE_TABLES`**（这份文件在你自己的仓库里，改它就是本职做法），或实现 `TenantTableContributor` 交给装配合成 —— 走后者时 `ScaffoldTenantLineHandlerTest` 那条反向校验默认读的是无贡献者的名单，要把你的贡献者一并传进去，否则会看到一格莫名红。漏登记的后果是这张表不受租户条件约束，而接口与页面都不报错；那条反向校验会解析 `sql/` 的 DDL，新增建表脚本带 `tenant_id` 却没登记就当场红。没有 `tenant_id` 列的表（关联中间表、按主键与编码定位的租户注册表）一律不注入，反向写法「全部减去少数」会让公共查询背上不存在的列。匿名请求（登录、验证码、健康检查）没有租户上下文，整体跳过注入。
 - JWT 的 `userId` 声明经 `LoginUser` 挂在 `Authentication#getDetails()` 上，业务代码统一用 `SecurityUtils`（`getUserId` / `getUsername` / `isAuthenticated`）读取当前登录人，不再自行解析请求头。
 - `@OperLog` 统一记录写操作及脱敏请求参数；切面会剔除 `ServletRequest` / `ServletResponse` / `MultipartFile` / `BindingResult` / `Model` 这类不可（或不应）序列化的容器对象——导出接口持有 `HttpServletResponse`，序列化会抛 `getOutputStream() has already been called` 并把业务请求带崩；参数记不住时只丢日志内容。客户端 IP 由 `framework/web/IpUtils` 按代理头优先级解析，经反向代理后不会全记成容器内网地址。异常由 `GlobalExceptionHandler` 返回统一错误结构。
 
 ## 初始化与时间
 
-`sql/V1__init_schema.sql` 创建 17 张表，`V2__seed_data.sql` 初始化组织、岗位、角色、用户、菜单、字典、参数及生成配置，`V3__system_resource_menu.sql` 追加系统管理「资源监测」页面菜单（ID 108，权限 `system:resource:list`）并补超级管理员(1) 的授权。关联表、日志表与生成字段表可不具备全部四个业务审计字段；其余业务表默认含创建人、更新人、创建时间和更新时间。
+`sql/V1__init_schema.sql` 创建 16 张表，`V2__seed_data.sql` 初始化组织、岗位、角色、用户、菜单、字典与参数，`V3__system_resource_menu.sql` 追加系统管理「资源监测」页面菜单（ID 108，权限 `system:resource:list`）并补超级管理员(1) 的授权。关联表与日志表可不具备全部四个业务审计字段；其余业务表默认含创建人、更新人、创建时间和更新时间。
 
 SQL 是新项目初始化基线，不是已有业务库的自动升级脚本。`DbInit` 使用进程中的 `DB_*` 变量，按版本顺序导入；参数 `fix` 会删除整个目标库，执行前必须核实库名与备份。
 
@@ -50,8 +51,7 @@ Jackson 的序列化时区由 `spring.jackson.time-zone`（环境变量 `JSON_TI
 
 ## 当前开发边界
 
-代码生成输出 7 份开发骨架，Controller、Service、Mapper 的业务 CRUD 仍需实现；字段配置目前只展示，表说明和确认标记可保存。ZIP 不会自动写入当前工程。
 
 `sys_file` 为保留表，当前没有完整文件上传接口；统一防重复提交与新增业务的数据权限闭环按具体项目需要扩展。
 
-模块文件、表、接口字段中文说明与排障入口见根目录 `PROJECT_MAP.md`；测试在独立本地校验库执行，避免混入开发库数据。
+测试在独立本地校验库执行，避免混入开发库数据。
