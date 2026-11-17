@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, inject, nextTick, onBeforeUnmount, provide, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import Icon from '@yuanda-lowcode-ai/scaffold-ui/components/Icon.vue'
 import IconButton from '@yuanda-lowcode-ai/scaffold-ui/components/ui/IconButton.vue'
 import Avatar from '@yuanda-lowcode-ai/scaffold-ui/components/ui/Avatar.vue'
@@ -18,12 +18,14 @@ const emit = defineEmits<{
 }>()
 
 const route = useRoute()
+const router = useRouter()
 const chip = ref<HTMLElement | null>(null)
 const pop = ref<HTMLElement | null>(null)
 const menuOpen = ref(false)
 const pos = ref({ top: 0, right: 0 })
 
 const group = computed(() => route.meta.group as string | undefined)
+const groupLink = computed(() => route.meta.groupLink as string | undefined)
 const title = computed(() => route.meta.title as string | undefined)
 const isMac = /Mac|iPhone|iPad/.test(navigator.platform)
 
@@ -88,7 +90,18 @@ onBeforeUnmount(() => closeMenu())
   <header class="topbar">
     <IconButton name="sidebar" label="切换导航" @click="emit('toggle-rail')" />
     <div class="crumbs" aria-label="当前位置">
-      <template v-if="group"><span>{{ group }}</span><Icon class="crumb-sep" name="chevronRight" :size="12" /></template>
+      <template v-if="group">
+        <template v-if="groupLink && group.includes(' > ')">
+          <span>{{ group.slice(0, group.lastIndexOf(' > ')) }}</span>
+          <Icon class="crumb-sep" name="chevronRight" :size="12" />
+          <button type="button" class="crumb-link" @click="router.push(groupLink)">{{ group.slice(group.lastIndexOf(' > ') + 3) }}</button>
+        </template>
+        <template v-else>
+          <button v-if="groupLink" type="button" class="crumb-link" @click="router.push(groupLink)">{{ group }}</button>
+          <span v-else>{{ group }}</span>
+        </template>
+        <Icon class="crumb-sep" name="chevronRight" :size="12" />
+      </template>
       <span class="crumb-current">{{ title }}</span>
     </div>
     <div class="spacer" />

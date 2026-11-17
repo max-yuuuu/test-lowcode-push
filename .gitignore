@@ -50,3 +50,6 @@
 # 低代码平台本地工作区（项目 clone 目录），默认相对后端进程工作目录，不入库
 /lowcode-workspace/
 **/lowcode-workspace/
+
+playwright-report/
+test-results/

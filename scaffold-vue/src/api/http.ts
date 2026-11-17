@@ -12,11 +12,11 @@ export interface HttpClientOptions {
 }
 
 export interface HttpClient {
-  get<T>(path: string, query?: QueryParams): Promise<T>
-  post<T>(path: string, body?: unknown): Promise<T>
-  put<T>(path: string, body?: unknown): Promise<T>
-  delete<T>(path: string): Promise<T>
-  download(path: string, query?: QueryParams): Promise<Blob>
+  get<T>(path: string, query?: QueryParams, signal?: AbortSignal): Promise<T>
+  post<T>(path: string, body?: unknown, signal?: AbortSignal): Promise<T>
+  put<T>(path: string, body?: unknown, signal?: AbortSignal): Promise<T>
+  delete<T>(path: string, signal?: AbortSignal): Promise<T>
+  download(path: string, query?: QueryParams, signal?: AbortSignal): Promise<Blob>
   /** 导出接口以 POST + 表单参数接收查询条件（沿用旧后端 $download.post 的传参方式） */
   downloadForm(path: string, form?: QueryParams): Promise<Blob>
 }
@@ -51,11 +51,11 @@ export function createHttpClient(options: HttpClientOptions = {}): HttpClient {
   const tokenProvider = options.tokenProvider ?? authSession.token
   const fetcher = options.fetcher ?? fetch
 
-  async function request<T>(method: string, path: string, body?: unknown, query?: QueryParams): Promise<T> {
+  async function request<T>(method: string, path: string, body?: unknown, query?: QueryParams, signal?: AbortSignal): Promise<T> {
     const headers: Record<string, string> = { Accept: 'application/json' }
     const token = tokenProvider()
     if (token) headers.Authorization = `Bearer ${token}`
-    const init: RequestInit = { method, headers }
+    const init: RequestInit = { method, headers, ...(signal ? { signal } : {}) }
     if (body !== undefined) {
       headers['Content-Type'] = 'application/json'
       init.body = JSON.stringify(body)
@@ -70,12 +70,12 @@ export function createHttpClient(options: HttpClientOptions = {}): HttpClient {
     return payload.data
   }
 
-  async function download(path: string, query?: QueryParams): Promise<Blob> {
+  async function download(path: string, query?: QueryParams, signal?: AbortSignal): Promise<Blob> {
     const headers: Record<string, string> = { Accept: 'text/csv,application/octet-stream,*/*' }
     const token = tokenProvider()
     if (token) headers.Authorization = `Bearer ${token}`
 
-    const response = await fetcher(buildUrl(baseUrl, path, query), { method: 'GET', headers })
+    const response = await fetcher(buildUrl(baseUrl, path, query), { method: 'GET', headers, ...(signal ? { signal } : {}) })
     return readBlob(response, token, '下载失败')
   }
 
@@ -101,10 +101,10 @@ export function createHttpClient(options: HttpClientOptions = {}): HttpClient {
   }
 
   return {
-    get: (path, query) => request('GET', path, undefined, query),
-    post: (path, body) => request('POST', path, body),
-    put: (path, body) => request('PUT', path, body),
-    delete: (path) => request('DELETE', path),
+    get: (path, query, signal) => request('GET', path, undefined, query, signal),
+    post: (path, body, signal) => request('POST', path, body, undefined, signal),
+    put: (path, body, signal) => request('PUT', path, body, undefined, signal),
+    delete: (path, signal) => request('DELETE', path, undefined, undefined, signal),
     download,
     downloadForm,
   }
