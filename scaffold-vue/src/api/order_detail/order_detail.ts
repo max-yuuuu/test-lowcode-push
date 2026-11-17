@@ -30,14 +30,14 @@ export interface OrderDetailWriteRequest {
 }
 
 export const orderDetailApi = {
-  list: (query?: QueryParams) => httpClient.get<PageResult<OrderDetailRow>>('/order_detail/order_detail', query),
+  list: (query?: QueryParams, signal?: AbortSignal) => httpClient.get<PageResult<OrderDetailRow>>('/order_detail/order_detail', query, signal),
   /** 返回新建行的主键 */
-  create: (body: OrderDetailWriteRequest) => httpClient.post<number>('/order_detail/order_detail', body),
+  create: (body: OrderDetailWriteRequest, signal?: AbortSignal) => httpClient.post<number>('/order_detail/order_detail', body, signal),
   /** 单行详情：编辑前先取整行，列表行只有勾选进列表的字段 */
-  detail: (id: number) => httpClient.get<OrderDetailWriteRequest & { id: number }>(`/order_detail/order_detail/${id}`),
+  detail: (id: number, signal?: AbortSignal) => httpClient.get<OrderDetailWriteRequest & { id: number }>(`/order_detail/order_detail/${id}`, undefined, signal),
   /** 整行覆盖可编辑字段：表单提交的是整个表单，后端没勾选的字段一个都不碰 */
-  update: (id: number, body: OrderDetailWriteRequest) => httpClient.put<void>(`/order_detail/order_detail/${id}`, body),
-  remove: (id: number) => httpClient.delete<void>(`/order_detail/order_detail/${id}`),
+  update: (id: number, body: OrderDetailWriteRequest, signal?: AbortSignal) => httpClient.put<void>(`/order_detail/order_detail/${id}`, body, signal),
+  remove: (id: number, signal?: AbortSignal) => httpClient.delete<void>(`/order_detail/order_detail/${id}`, signal),
   /** 后端生成 CSV，条件与列表同一套 */
-  export: (query?: QueryParams) => httpClient.download('/order_detail/order_detail/export', query),
+  export: (query?: QueryParams, signal?: AbortSignal) => httpClient.download('/order_detail/order_detail/export', query, signal),
 }
