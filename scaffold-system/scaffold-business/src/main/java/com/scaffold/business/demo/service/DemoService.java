@@ -4,6 +4,8 @@ package com.scaffold.business.demo.service;
 import com.scaffold.business.demo.domain.Demo;
 import com.scaffold.business.demo.domain.DemoRow;
 import com.scaffold.business.demo.domain.DemoWriteRequest;
+import com.scaffold.business.demo.domain.DemoReconcile20261117Request;
+import com.scaffold.business.demo.domain.DemoReconcile20261117Response;
 import com.scaffold.business.demo.mapper.DemoMapper;
 import com.scaffold.common.domain.PageQuery;
 import com.scaffold.common.domain.PageResult;
@@ -34,11 +36,13 @@ public class DemoService {
     private final DemoMapper mapper;
     private final DemoExtension extension;
     private final DemoArchiveExtension archiveExtension;
+    private final DemoReconcile20261117Extension reconcile20261117Extension;
 
-    public DemoService(DemoMapper mapper, DemoExtension extension, DemoArchiveExtension archiveExtension) {
+    public DemoService(DemoMapper mapper, DemoExtension extension, DemoArchiveExtension archiveExtension, DemoReconcile20261117Extension reconcile20261117Extension) {
         this.mapper = mapper;
         this.extension = extension;
         this.archiveExtension = archiveExtension;
+        this.reconcile20261117Extension = reconcile20261117Extension;
     }
 
     /** 分页列表。查询条件逐个平铺在签名上：前端传什么、SQL 查什么，不用翻到 Mapper 才看清楚 */
@@ -120,5 +124,14 @@ public class DemoService {
      */
     public void archive() {
         archiveExtension.execute();
+    }
+
+    /**
+     * 对账验证（自定义接口 {@code reconcile_20261117}，契约 v1）：委托
+     * {@code DemoReconcile20261117Extension}（C 档）。骨架默认抛 {@code OPERATION_NOT_IMPLEMENTED}；
+     * 事务边界由实现方自己声明，平台不替骨架方法包事务。
+     */
+    public DemoReconcile20261117Response reconcile20261117(DemoReconcile20261117Request request) {
+        return reconcile20261117Extension.execute(request);
     }
 }

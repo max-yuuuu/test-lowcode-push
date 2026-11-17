@@ -3,6 +3,8 @@ package com.scaffold.business.demo.controller;
 import com.scaffold.business.demo.domain.Demo;
 import com.scaffold.business.demo.domain.DemoRow;
 import com.scaffold.business.demo.domain.DemoWriteRequest;
+import com.scaffold.business.demo.domain.DemoReconcile20261117Request;
+import com.scaffold.business.demo.domain.DemoReconcile20261117Response;
 import com.scaffold.business.demo.service.DemoService;
 import com.scaffold.common.domain.PageQuery;
 import com.scaffold.common.domain.PageResult;
@@ -95,5 +97,15 @@ public class DemoController {
     public R<Void> archive() {
         service.archive();
         return R.success(null);
+    }
+
+    /**
+     * 对账验证（自定义接口 {@code reconcile_20261117}，契约 v1）。
+     * 实现住 {@code DemoReconcile20261117Extension}（C 档）；未实现时返回 {@code OPERATION_NOT_IMPLEMENTED}。
+     */
+    @PostMapping("/reconcile_20261117")
+    @OperLog(module = "测试模型", action = "对账验证")
+    public R<DemoReconcile20261117Response> reconcile20261117(@RequestBody DemoReconcile20261117Request request) {
+        return R.success(service.reconcile20261117(request));
     }
 }
