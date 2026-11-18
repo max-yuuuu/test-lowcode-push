@@ -30,7 +30,7 @@ const list = useListPage<T11DemoRow, T11DemoQuery>({
 })
 
 // 页面行为（2.0）：装配共享执行内核；页面动作接列表/提示/确认，方法实例与 operation 由 overrides 注入。
-const behaviorDocument = {"flows":[],"variables":[],"propBindings":[],"eventBindings":[]} as unknown as PageDesignV2['behavior']
+const behaviorDocument = {"flows":[],"variables":[{"id":"var-mwn5bozs-1","code":"chainFlag","type":{"type":"string","nullable":false},"label":"链路标记","nullable":false,"defaultValue":""}],"propBindings":[],"eventBindings":[]} as unknown as PageDesignV2['behavior']
 // 页面级能力与组件实例分开：表格刷新/查询是列表代理，不伪装成物料实例。
 const behaviorTargets: Record<string, unknown> = {
   'legacy-1yjgjjy': { refresh: () => list.load(), search: () => list.search() },
