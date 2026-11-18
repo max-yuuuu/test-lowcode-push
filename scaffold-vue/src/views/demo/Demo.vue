@@ -12,7 +12,7 @@ import { createGeneratedPageRuntime, resolveGeneratedTarget } from '@yuanda-lowc
 import type { PageDesignV2 } from '@yuanda-lowcode-ai/scaffold-ui/capabilities'
 
 /* ============================================================
-   Demo。由低代码设计器按模型定义生成，属 B 档：每次发布整文件覆盖。
+   Demo T11 UI驗收。由低代码设计器按模型定义生成，属 B 档：每次发布整文件覆盖。
    版式固定走 ListPage + useListPage（查询 / 重置 / 分页 / 导出 / 行操作都是公共能力），
    页面只声明字段、列与动作。要加区块写到 src/views/demo/overrides/ 里；
    要长期人工接管这一页，就把它改名并让发布不再产出它 —— 现在它每次发布都会被整文件覆盖。
@@ -178,7 +178,7 @@ async function remove(row: DemoRow) {
 
 <template>
   <ListPage
-    title="Demo"
+    title="Demo T11 UI驗收"
     desc="本页由低代码设计器按模型定义生成；要改字段回到设计器改模型再发布。"
     table-title="测试模型列表"
     :list="list"
