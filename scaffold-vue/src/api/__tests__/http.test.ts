@@ -67,3 +67,29 @@ test('an unauthorized download for the current session uses the same login-expir
     setUnauthorizedHandler(null)
   }
 })
+
+for (const [name, invoke] of [
+  ['get', (client: ReturnType<typeof createHttpClient>, signal: AbortSignal) => client.get('/sales/orders', undefined, signal)],
+  ['post', (client: ReturnType<typeof createHttpClient>, signal: AbortSignal) => client.post('/sales/orders', {}, signal)],
+  ['put', (client: ReturnType<typeof createHttpClient>, signal: AbortSignal) => client.put('/sales/orders/1', {}, signal)],
+  ['delete', (client: ReturnType<typeof createHttpClient>, signal: AbortSignal) => client.delete('/sales/orders/1', signal)],
+  ['download', (client: ReturnType<typeof createHttpClient>, signal: AbortSignal) => client.download('/sales/orders/export', undefined, signal)],
+] as const) {
+  test(`${name} forwards the original AbortSignal and aborts pending transport`, async () => {
+    const controller = new AbortController()
+    let received: AbortSignal | null | undefined
+    const client = createHttpClient({
+      tokenProvider: () => null,
+      fetcher: async (_url, init) => {
+        received = init?.signal
+        return new Promise<Response>((_resolve, reject) => {
+          received?.addEventListener('abort', () => reject(new DOMException('cancelled', 'AbortError')), { once: true })
+        })
+      },
+    })
+    const pending = invoke(client, controller.signal)
+    assert.equal(received, controller.signal)
+    controller.abort()
+    await assert.rejects(pending, { name: 'AbortError' })
+  })
+}

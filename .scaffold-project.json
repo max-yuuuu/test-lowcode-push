@@ -1,9 +1,9 @@
 {
-  "projectCode" : "order-service",
-  "projectName" : "订单中台",
-  "baseScaffoldSha" : "c56d08df5615e25eb0d66a0795993c0366845051",
+  "projectCode" : "t11chain068164",
+  "projectName" : "T11 真实链路",
+  "baseScaffoldSha" : "01d06f74e2b117346b7a6f406a5c9052a8d403f8",
   "mainBranch" : "main",
   "generatedBranch" : "platform-generated",
-  "initializedAt" : "2026-11-09T22:39:32.727834+08:00",
+  "initializedAt" : "2026-11-19T14:02:56.060314+08:00",
   "note" : "平台只写 generatedBranch 分支；本文件所在分支由使用方掌控，固定代码可自由修改。"
 }
