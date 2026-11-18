@@ -12,7 +12,7 @@ import org.apache.ibatis.annotations.Update;
 import java.util.List;
 
 /**
- * T11增删改发布验证（表 {@code t11_verify_20261118}）的数据访问。
+ * T11增删改发布验证-v2（表 {@code t11_verify_20261118}）的数据访问。
  *
  * <p>本类由低代码设计器按模型定义生成，属 B 档：每次发布整文件覆盖，要自定义查询请回到设计器
  * 改字段与查询方式，或在同包的 {@code T11Verify20261118Extension}（C 档）里另写。
@@ -72,7 +72,7 @@ public interface T11Verify20261118Mapper {
     T11Verify20261118 selectById(@Param("id") Long id);
 
     /**
-     * 新增T11增删改发布验证，自增主键回写进实体的 {@code id}。
+     * 新增T11增删改发布验证-v2，自增主键回写进实体的 {@code id}。
      * <p>创建 / 更新时间不写进语句，交给表上的 {@code DEFAULT CURRENT_TIMESTAMP} 与
      * {@code ON UPDATE CURRENT_TIMESTAMP} —— 与底座同一口径，也让数据库成为时间的唯一出处。
      */

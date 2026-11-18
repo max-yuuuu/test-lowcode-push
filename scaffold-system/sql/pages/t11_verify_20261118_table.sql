@@ -1,4 +1,4 @@
--- T11增删改发布验证（模型 T11Verify20261118，表 t11_verify_20261118）
+-- T11增删改发布验证-v2（模型 T11Verify20261118，表 t11_verify_20261118）
 -- 由低代码设计器按模型定义生成，属 B 档：每次发布整文件覆盖。要改结构请回到设计器改模型，
 -- 在这里手改的内容下次发布会被整文件替换掉。
 --
@@ -20,4 +20,4 @@ CREATE TABLE IF NOT EXISTS t11_verify_20261118 (
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='T11增删改发布验证';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='T11增删改发布验证-v2';

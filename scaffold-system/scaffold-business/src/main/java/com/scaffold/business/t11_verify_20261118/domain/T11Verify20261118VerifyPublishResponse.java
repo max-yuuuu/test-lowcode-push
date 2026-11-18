@@ -2,7 +2,7 @@ package com.scaffold.business.t11_verify_20261118.domain;
 
 
 /**
- * T11发布验证接口的出参（接口标识 {@code verify_publish}，契约 v1，表 {@code t11_verify_20261118}）。
+ * T11发布验证接口二次修改的出参（接口标识 {@code verify_publish}，契约 v2，表 {@code t11_verify_20261118}）。
  *
  * <p>本类由低代码设计器按接口契约生成，属 B 档：每次发布整文件覆盖。
  * 字段与中文说明来自契约 schema，改字段请回到设计器改契约（会产生新版本），别在这里手改。
@@ -15,6 +15,11 @@ public class T11Verify20261118VerifyPublishResponse {
     /** 是否成功（必填） */
     private Boolean ok;
 
+    /** 消息 */
+    private String message;
+
     public Boolean getOk() { return ok; }
     public void setOk(Boolean ok) { this.ok = ok; }
+    public String getMessage() { return message; }
+    public void setMessage(String message) { this.message = message; }
 }

@@ -1,4 +1,4 @@
--- T11验收菜单的菜单与权限点
+-- T11验收菜单二次修改的菜单与权限点
 -- 由低代码设计器按模型定义生成，属 B 档：每次发布整文件覆盖。权限点由模型编码派生
 -- （t11_verify_20261118:t11_verify20261118:*），与生成的 Controller 上的 @RequiresPermission 一一对应 ——
 -- 只改一边就会出现「页面在、点进去 403」。
@@ -10,29 +10,29 @@
 -- 重发布会把菜单行更新到最新口径：只 INSERT 不 UPDATE 的话，页面改了路由、图标、
 -- 排序或归组之后，目标库里那条旧菜单永远不会跟着走。
 --
--- 本页归在路由分组「T11验收分组」下：先确保分组目录存在（判重口径是「顶层 + dir + 路径」），
--- 再把页面菜单挂到它下面。最终路径 = 分组前缀 /t11verify + 页面路径 = /t11verify/page。
+-- 本页归在路由分组「T11验收分组二次修改」下：先确保分组目录存在（判重口径是「顶层 + dir + 路径」），
+-- 再把页面菜单挂到它下面。最终路径 = 分组前缀 /t11verify2 + 页面路径 = /t11verify2/page2。
 -- 给内置管理员（role_id = 1）之外的角色授权页面时，要把这条目录一起勾上：
 -- 菜单树按角色授权取行，只有子页面没有父目录时，那个页面会被当成顶层项显示。
 -- 图标可选值见物料包 data/icons.ts。component 就是前端路由解析的相对路径：
 -- t11_verify_20261118/T11Verify20261118 → src/views/t11_verify_20261118/T11Verify20261118.vue，该文件同样由平台生成并在同一次发布里推上去。
 
 INSERT INTO sys_menu (parent_id, menu_name, menu_type, icon, path, component, permission, sort, visible, status, create_by, update_by)
-SELECT 0, 'T11验收分组', 'dir', 'grid', '/t11verify', '', '', 99, 1, 1, 'system', 'system'
+SELECT 0, 'T11验收分组二次修改', 'dir', 'grid', '/t11verify2', '', '', 98, 1, 1, 'system', 'system'
 FROM DUAL
-WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE parent_id = 0 AND menu_type = 'dir' AND path = '/t11verify');
+WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE parent_id = 0 AND menu_type = 'dir' AND path = '/t11verify2');
 
 UPDATE sys_menu
-SET menu_name = 'T11验收分组',
+SET menu_name = 'T11验收分组二次修改',
     icon = 'grid',
-    sort = 99,
+    sort = 98,
     update_by = 'system'
-WHERE parent_id = 0 AND menu_type = 'dir' AND path = '/t11verify';
+WHERE parent_id = 0 AND menu_type = 'dir' AND path = '/t11verify2';
 
-SET @t11_verify20261118_group := (SELECT id FROM sys_menu WHERE parent_id = 0 AND menu_type = 'dir' AND path = '/t11verify' LIMIT 1);
+SET @t11_verify20261118_group := (SELECT id FROM sys_menu WHERE parent_id = 0 AND menu_type = 'dir' AND path = '/t11verify2' LIMIT 1);
 
 INSERT INTO sys_menu (parent_id, menu_name, menu_type, icon, path, component, permission, sort, visible, status, create_by, update_by)
-SELECT @t11_verify20261118_group, 'T11验收菜单', 'menu', 'grid', '/t11verify/page', 't11_verify_20261118/T11Verify20261118', 't11_verify_20261118:t11_verify20261118:list', 99, 1, 1, 'system', 'system'
+SELECT @t11_verify20261118_group, 'T11验收菜单二次修改', 'menu', 'grid', '/t11verify2/page2', 't11_verify_20261118/T11Verify20261118', 't11_verify_20261118:t11_verify20261118:list', 98, 1, 1, 'system', 'system'
 FROM DUAL
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE permission = 't11_verify_20261118:t11_verify20261118:list');
 
@@ -40,47 +40,47 @@ SET @t11_verify20261118_menu := (SELECT id FROM sys_menu WHERE permission = 't11
 
 UPDATE sys_menu
 SET parent_id = @t11_verify20261118_group,
-    menu_name = 'T11验收菜单',
+    menu_name = 'T11验收菜单二次修改',
     menu_type = 'menu',
     icon = 'grid',
-    path = '/t11verify/page',
+    path = '/t11verify2/page2',
     component = 't11_verify_20261118/T11Verify20261118',
-    sort = 99,
+    sort = 98,
     update_by = 'system'
 WHERE permission = 't11_verify_20261118:t11_verify20261118:list';
 
 INSERT INTO sys_menu (parent_id, menu_name, menu_type, icon, path, component, permission, sort, visible, status, create_by, update_by)
-SELECT @t11_verify20261118_menu, '新增T11验收模型已修改', 'btn', '', '', '', 't11_verify_20261118:t11_verify20261118:add', 1, 1, 1, 'system', 'system'
+SELECT @t11_verify20261118_menu, '新增T11验收模型二次修改', 'btn', '', '', '', 't11_verify_20261118:t11_verify20261118:add', 1, 1, 1, 'system', 'system'
 FROM DUAL
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE permission = 't11_verify_20261118:t11_verify20261118:add');
 
 UPDATE sys_menu
 SET parent_id = @t11_verify20261118_menu,
-    menu_name = '新增T11验收模型已修改',
+    menu_name = '新增T11验收模型二次修改',
     sort = 1,
     update_by = 'system'
 WHERE permission = 't11_verify_20261118:t11_verify20261118:add';
 
 INSERT INTO sys_menu (parent_id, menu_name, menu_type, icon, path, component, permission, sort, visible, status, create_by, update_by)
-SELECT @t11_verify20261118_menu, '编辑T11验收模型已修改', 'btn', '', '', '', 't11_verify_20261118:t11_verify20261118:edit', 2, 1, 1, 'system', 'system'
+SELECT @t11_verify20261118_menu, '编辑T11验收模型二次修改', 'btn', '', '', '', 't11_verify_20261118:t11_verify20261118:edit', 2, 1, 1, 'system', 'system'
 FROM DUAL
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE permission = 't11_verify_20261118:t11_verify20261118:edit');
 
 UPDATE sys_menu
 SET parent_id = @t11_verify20261118_menu,
-    menu_name = '编辑T11验收模型已修改',
+    menu_name = '编辑T11验收模型二次修改',
     sort = 2,
     update_by = 'system'
 WHERE permission = 't11_verify_20261118:t11_verify20261118:edit';
 
 INSERT INTO sys_menu (parent_id, menu_name, menu_type, icon, path, component, permission, sort, visible, status, create_by, update_by)
-SELECT @t11_verify20261118_menu, '删除T11验收模型已修改', 'btn', '', '', '', 't11_verify_20261118:t11_verify20261118:remove', 3, 1, 1, 'system', 'system'
+SELECT @t11_verify20261118_menu, '删除T11验收模型二次修改', 'btn', '', '', '', 't11_verify_20261118:t11_verify20261118:remove', 3, 1, 1, 'system', 'system'
 FROM DUAL
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE permission = 't11_verify_20261118:t11_verify20261118:remove');
 
 UPDATE sys_menu
 SET parent_id = @t11_verify20261118_menu,
-    menu_name = '删除T11验收模型已修改',
+    menu_name = '删除T11验收模型二次修改',
     sort = 3,
     update_by = 'system'
 WHERE permission = 't11_verify_20261118:t11_verify20261118:remove';

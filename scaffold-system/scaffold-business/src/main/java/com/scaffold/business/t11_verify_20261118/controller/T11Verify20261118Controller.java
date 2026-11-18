@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * T11增删改发布验证（表 {@code t11_verify_20261118}）的接口。
+ * T11增删改发布验证-v2（表 {@code t11_verify_20261118}）的接口。
  *
  * <p>本类由低代码设计器按模型定义生成，属 B 档：每次发布整文件覆盖，要加接口请回到设计器，
  * 或在同包的 {@code T11Verify20261118Extension}（C 档）里做，别在这里塞业务分支。
@@ -67,14 +67,14 @@ public class T11Verify20261118Controller {
 
     @PostMapping
     @RequiresPermission("t11_verify_20261118:t11_verify20261118:add")
-    @OperLog(module = "T11增删改发布验证", action = "新增")
+    @OperLog(module = "T11增删改发布验证-v2", action = "新增")
     public R<Long> create(@RequestBody T11Verify20261118WriteRequest request) {
         return R.success(service.create(request));
     }
 
     @PutMapping("/{id}")
     @RequiresPermission("t11_verify_20261118:t11_verify20261118:edit")
-    @OperLog(module = "T11增删改发布验证", action = "修改")
+    @OperLog(module = "T11增删改发布验证-v2", action = "修改")
     public R<Void> update(@PathVariable Long id, @RequestBody T11Verify20261118WriteRequest request) {
         service.update(id, request);
         return R.success(null);
@@ -82,14 +82,14 @@ public class T11Verify20261118Controller {
 
     @DeleteMapping("/{id}")
     @RequiresPermission("t11_verify_20261118:t11_verify20261118:remove")
-    @OperLog(module = "T11增删改发布验证", action = "删除")
+    @OperLog(module = "T11增删改发布验证-v2", action = "删除")
     public R<Void> delete(@PathVariable Long id) {
         service.delete(id);
         return R.success(null);
     }
 
     /**
-     * T11发布验证接口（自定义接口 {@code verify_publish}，契约 v1）。
+     * T11发布验证接口二次修改（自定义接口 {@code verify_publish}，契约 v2）。
      * 实现住 {@code T11Verify20261118VerifyPublishExtension}（C 档）；未实现时返回 {@code OPERATION_NOT_IMPLEMENTED}。
      */
     @PostMapping("/verify_publish")

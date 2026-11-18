@@ -12,7 +12,7 @@ import { createGeneratedPageRuntime, resolveGeneratedTarget } from '@yuanda-lowc
 import type { PageDesignV2 } from '@yuanda-lowcode-ai/scaffold-ui/capabilities'
 
 /* ============================================================
-   T11验收页面。由低代码设计器按模型定义生成，属 B 档：每次发布整文件覆盖。
+   T11验收页面二次修改。由低代码设计器按模型定义生成，属 B 档：每次发布整文件覆盖。
    版式固定走 ListPage + useListPage（查询 / 重置 / 分页 / 导出 / 行操作都是公共能力），
    页面只声明字段、列与动作。要加区块写到 src/views/t11_verify_20261118/overrides/ 里；
    要长期人工接管这一页，就把它改名并让发布不再产出它 —— 现在它每次发布都会被整文件覆盖。
@@ -26,7 +26,7 @@ const list = useListPage<T11Verify20261118Row, T11Verify20261118Query>({
   },
   fetch: params => t11Verify20261118Api.list(params),
   exporter: params => t11Verify20261118Api.export(params),
-  exportName: 'T11增删改发布验证.csv',
+  exportName: 'T11增删改发布验证-v2.csv',
 })
 
 // 页面行为（2.0）：装配共享执行内核；页面动作接列表/提示/确认，方法实例与 operation 由 overrides 注入。
@@ -133,7 +133,7 @@ async function openEdit(row: T11Verify20261118Row) {
     errors.value = {}
     dialog.value = true
   } catch (error) {
-    toastError(error, 'T11验收模型已修改加载失败')
+    toastError(error, 'T11验收模型二次修改加载失败')
   }
 }
 
@@ -148,11 +148,11 @@ async function submit() {
   try {
     if (editing.value !== null) await t11Verify20261118Api.update(editing.value, payload)
     else await t11Verify20261118Api.create(payload)
-    pushToast(editing.value !== null ? 'T11验收模型已修改已更新' : 'T11验收模型已修改已创建')
+    pushToast(editing.value !== null ? 'T11验收模型二次修改已更新' : 'T11验收模型二次修改已创建')
     dialog.value = false
     await list.load()
   } catch (error) {
-    toastError(error, 'T11验收模型已修改保存失败')
+    toastError(error, 'T11验收模型二次修改保存失败')
   } finally {
     saving.value = false
   }
@@ -160,27 +160,27 @@ async function submit() {
 
 async function remove(row: T11Verify20261118Row) {
   const ok = await confirm({
-    title: '删除T11验收模型已修改',
-    message: '删除后平台不会自动回滚已发布到仓库的代码。确认删除这条T11验收模型已修改吗？',
+    title: '删除T11验收模型二次修改',
+    message: '删除后平台不会自动回滚已发布到仓库的代码。确认删除这条T11验收模型二次修改吗？',
     confirmText: '删除',
     danger: true,
   })
   if (!ok) return
   try {
     await t11Verify20261118Api.remove(row.id)
-    pushToast('T11验收模型已修改已删除')
+    pushToast('T11验收模型二次修改已删除')
     await list.load()
   } catch (error) {
-    toastError(error, 'T11验收模型已修改删除失败')
+    toastError(error, 'T11验收模型二次修改删除失败')
   }
 }
 </script>
 
 <template>
   <ListPage
-    title="T11验收页面"
+    title="T11验收页面二次修改"
     desc="本页由低代码设计器按模型定义生成；要改字段回到设计器改模型再发布。"
-    table-title="T11验收模型已修改列表"
+    table-title="T11验收模型二次修改列表"
     :list="list"
     :columns="columns"
   >
@@ -197,7 +197,7 @@ async function remove(row: T11Verify20261118Row) {
     </template>
   </ListPage>
 
-  <FormDialog :open="dialog" :title="editing !== null ? '编辑T11验收模型已修改' : '新增T11验收模型已修改'" :saving="saving" @close="dialog = false" @submit="submit">
+  <FormDialog :open="dialog" :title="editing !== null ? '编辑T11验收模型二次修改' : '新增T11验收模型二次修改'" :saving="saving" @close="dialog = false" @submit="submit">
     <Field label="名称" wide data-field-node-id="e9bb666b-5a45-4cb7-85c9-daaa3e1c35da" :error="errors.title">
       <TextInput v-model="form.title" />
     </Field>

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import java.time.LocalDateTime;
 
 /**
- * T11增删改发布验证（表 {@code t11_verify_20261118}）。
+ * T11增删改发布验证-v2（表 {@code t11_verify_20261118}）。
  *
  * <p>本类由低代码设计器按模型定义生成，属 B 档：每次发布整文件覆盖，请不要在这里改业务逻辑，
  * 需要扩展请写到同包的 {@code T11Verify20261118Extension}（C 档，生成一次后平台不再覆盖）。

@@ -18,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 /**
- * T11增删改发布验证（表 {@code t11_verify_20261118}）的业务入口。
+ * T11增删改发布验证-v2（表 {@code t11_verify_20261118}）的业务入口。
  *
  * <p>本类由低代码设计器按模型定义生成，属 B 档：每次发布整文件覆盖。业务规则、状态流转、
  * 跨实体事务请写到同包的 {@code T11Verify20261118Extension}（C 档，生成一次后平台不再覆盖）——
@@ -57,7 +57,7 @@ public class T11Verify20261118Service {
     public T11Verify20261118 detail(Long id) {
         T11Verify20261118 entity = mapper.selectById(id);
         if (entity == null) {
-            throw new BusinessException("T11验收模型已修改不存在或已删除");
+            throw new BusinessException("T11验收模型二次修改不存在或已删除");
         }
         return entity;
     }
@@ -76,7 +76,7 @@ public class T11Verify20261118Service {
         return CsvUtils.csv(List.of("主键", "标题", "创建时间"), data);
     }
 
-    /** 新增T11增删改发布验证，返回新行主键 */
+    /** 新增T11增删改发布验证-v2，返回新行主键 */
     @Transactional
     public Long create(T11Verify20261118WriteRequest request) {
         T11Verify20261118 entity = new T11Verify20261118();
@@ -88,7 +88,7 @@ public class T11Verify20261118Service {
     }
 
     /**
-     * 修改T11增删改发布验证。表单提交的是整个表单，勾选了「可编辑」的字段按新值覆盖，
+     * 修改T11增删改发布验证-v2。表单提交的是整个表单，勾选了「可编辑」的字段按新值覆盖，
      * 没勾选的（含主键与审计列）一个都不碰。
      */
     @Transactional
@@ -97,26 +97,26 @@ public class T11Verify20261118Service {
         entity.setTitle(request.getTitle());
         extension.beforeUpdate(id, entity);
         if (mapper.update(id, entity, SecurityUtils.getUsername()) == 0) {
-            throw new BusinessException("T11验收模型已修改不存在或已删除");
+            throw new BusinessException("T11验收模型二次修改不存在或已删除");
         }
         extension.afterUpdate(id, entity);
     }
 
     /**
-     * 删除T11增删改发布验证。这张表勾了「逻辑删除」：只翻删除标记，历史留在库里。
+     * 删除T11增删改发布验证-v2。这张表勾了「逻辑删除」：只翻删除标记，历史留在库里。
      * 受影响行数为 0 说明这一行本来就不在了。
      */
     @Transactional
     public void delete(Long id) {
         extension.beforeDelete(id);
         if (mapper.deleteById(id, SecurityUtils.getUsername()) == 0) {
-            throw new BusinessException("T11验收模型已修改不存在或已删除");
+            throw new BusinessException("T11验收模型二次修改不存在或已删除");
         }
         extension.afterDelete(id);
     }
 
     /**
-     * T11发布验证接口（自定义接口 {@code verify_publish}，契约 v1）：委托
+     * T11发布验证接口二次修改（自定义接口 {@code verify_publish}，契约 v2）：委托
      * {@code T11Verify20261118VerifyPublishExtension}（C 档）。骨架默认抛 {@code OPERATION_NOT_IMPLEMENTED}；
      * 事务边界由实现方自己声明，平台不替骨架方法包事务。
      */
