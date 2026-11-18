@@ -7,6 +7,9 @@ import { confirm } from '@yuanda-lowcode-ai/scaffold-ui/composables/confirm'
 import { pushToast, toastError } from '@yuanda-lowcode-ai/scaffold-ui/composables/toast'
 import { required, validate } from '@yuanda-lowcode-ai/scaffold-ui/utils/validate'
 import { t11DemoApi, type T11DemoRow, type T11DemoWriteRequest } from '@/api/t11_demo/t11_demo'
+import { onBeforeUnmount, onMounted } from 'vue'
+import { createGeneratedPageRuntime, resolveGeneratedTarget } from '@yuanda-lowcode-ai/scaffold-ui/composables/generated-behavior'
+import type { PageDesignV2 } from '@yuanda-lowcode-ai/scaffold-ui/capabilities'
 
 /* ============================================================
    T11 演示。由低代码设计器按模型定义生成，属 B 档：每次发布整文件覆盖。
@@ -26,6 +29,60 @@ const list = useListPage<T11DemoRow, T11DemoQuery>({
   fetch: params => t11DemoApi.list(params),
 })
 
+// 页面行为（2.0）：装配共享执行内核；页面动作接列表/提示/确认，方法实例与 operation 由 overrides 注入。
+const behaviorDocument = {"flows":[],"variables":[],"propBindings":[],"eventBindings":[]} as unknown as PageDesignV2['behavior']
+// 页面级能力与组件实例分开：表格刷新/查询是列表代理，不伪装成物料实例。
+const behaviorTargets: Record<string, unknown> = {
+  'legacy-1yjgjjy': { refresh: () => list.load(), search: () => list.search() },
+}
+const behaviorComponentTypes: Record<string, string> = {
+  'legacy-p051ze': 'SearchForm',
+  'legacy-u9gpky': 'TextInput',
+  'legacy-wd8j94': 'Toolbar',
+  'legacy-1l4m30v': 'Button',
+  'legacy-1yjgjjy': 'DataTable',
+  'legacy-1r3ebxc': 'FormContainer',
+  'legacy-f1uz8': 'TextInput',
+}
+const pageBehavior = createGeneratedPageRuntime({
+  document: { version: '2.0', pageType: 'list', modelRef: 'generated', layout: { id: 'generated', type: 'GeneratedPage' }, behavior: behaviorDocument } as unknown as PageDesignV2,
+  host: {
+    componentOfNode: (nodeId: string) => behaviorComponentTypes[nodeId],
+    resolveTarget: (nodeId, scope) => resolveGeneratedTarget(pageBehavior.targets, nodeId, scope, behaviorTargets),
+    runPageAction: async (action: string, args: Record<string, unknown>) => {
+      if (action === 'refresh') { await list.load(); return undefined }
+      if (action === 'toast') { pushToast(String(args.message ?? '')); return undefined }
+      if (action === 'confirm.ask') { return await confirm({ title: String(args.title ?? '确认'), message: String(args.message ?? ''), danger: Boolean(args.danger) }) }
+      // 未适配动作必须失败可见，不能以 undefined 伪装执行成功。
+      throw new Error('页面动作「' + action + '」尚未由生成页宿主适配')
+    },
+    invokeOperation: async (operationId: string, params: Record<string, unknown>, context: { nodeId: string; signal: AbortSignal }) => {
+      // 约定：operation 末段是 CRUD 动作（list/detail/create/update/remove/export），复用页面自有 api 模块
+      const method = operationId.split('.').pop() ?? ''
+      if (method === 'list') return await t11DemoApi.list(params as never, context.signal)
+      if (method === 'export') return await t11DemoApi.export(params as never, context.signal)
+      if (method === 'create') return await t11DemoApi.create(params as never, context.signal)
+      if (method === 'update') return await t11DemoApi.update(params.id as never, params as never, context.signal)
+      if (method === 'detail') return await t11DemoApi.detail(params.id as never, context.signal)
+      if (method === 'remove') return await t11DemoApi.remove(params.id as never, context.signal)
+      throw new Error('operation「' + operationId + '」不在本页 api 模块的 CRUD 动作内，请在 overrides 中注入')
+    },
+  },
+})
+// Vue ref 回调把真实组件实例注册到共享运行时；null/卸载时立即注销。
+const behaviorTargetDisposers = new Map<string, () => void>()
+const behaviorTargetRef = (nodeId: string, key?: string | number) => (instance: unknown | null) => {
+  const slot = JSON.stringify([nodeId, key === undefined ? null : [typeof key, key]])
+  behaviorTargetDisposers.get(slot)?.()
+  behaviorTargetDisposers.delete(slot)
+  if (instance != null) behaviorTargetDisposers.set(slot, pageBehavior.targets.register(nodeId, instance, key))
+}
+function disposeBehaviorTargets() {
+  for (const dispose of behaviorTargetDisposers.values()) dispose()
+  behaviorTargetDisposers.clear()
+}
+onMounted(() => { void pageBehavior.pageLoad() })
+onBeforeUnmount(() => { disposeBehaviorTargets(); pageBehavior.dispose() })
 
 const columns: Column[] = [
   { key: 'name', title: '名称', minWidth: 160 },
@@ -127,8 +184,8 @@ async function remove(row: T11DemoRow) {
     </template>
 
     <template #search>
-      <Field label="名称">
-        <TextInput v-model="list.query.name" clearable @enter="list.search()" />
+      <Field label="名称" data-field-node-id="legacy-u9gpky">
+        <TextInput v-model="list.query.name" clearable @enter="list.search()" :ref="behaviorTargetRef('legacy-u9gpky')" />
       </Field>
     </template>
     <template #cell-createTime="{ row }"><span class="tnum soft">{{ row.createTime ?? '—' }}</span></template>
@@ -136,7 +193,7 @@ async function remove(row: T11DemoRow) {
   </ListPage>
 
   <FormDialog :open="dialog" :title="editing !== null ? '编辑T11 演示' : '新增T11 演示'" :saving="saving" @close="dialog = false" @submit="submit">
-    <Field label="名称" wide :error="errors.name">
+    <Field label="名称" wide data-field-node-id="legacy-f1uz8" :error="errors.name">
       <TextInput v-model="form.name" />
     </Field>
   </FormDialog>
