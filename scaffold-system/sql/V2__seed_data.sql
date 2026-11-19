@@ -1,7 +1,7 @@
 -- 本地开发示例数据；组织与用户仅供演示，电话留空，邮箱使用 example.com。
 -- 默认租户：所有种子数据默认归属 id=1；sys_* 表 tenant_id 走列 DEFAULT 1，无需在 INSERT 中显式声明。
 INSERT IGNORE INTO lc_tenant (id, tenant_code, tenant_name, contact_name, max_projects, status, remark, create_by, update_by)
-VALUES (1, 'default', '订单中台', '系统', 100, 1, '本项目种子数据归属的默认租户（登录链每次都要查它是否停用）', 'system', 'system');
+VALUES (1, 'default', 'T11 真实链路', '系统', 100, 1, '本项目种子数据归属的默认租户（登录链每次都要查它是否停用）', 'system', 'system');
 
 INSERT IGNORE INTO sys_dept (id, parent_id, ancestors, dept_name, leader, phone, email, sort, status, create_by, update_by)
 VALUES
