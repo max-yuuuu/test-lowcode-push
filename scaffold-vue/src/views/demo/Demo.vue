@@ -30,7 +30,7 @@ const list = useListPage<DemoRow, DemoQuery>({
 })
 
 // 页面行为（2.0）：装配共享执行内核；页面动作接列表/提示/确认，方法实例与 operation 由 overrides 注入。
-const behaviorDocument = {"flows":[{"id":"flow:page:page:page-load","name":"page-load","edges":[{"id":"flow:page:page:page-load#edge-mwldwznw-2","port":"next","source":"flow:page:page:page-load#trigger","target":"flow:page:page:page-load#api-mwldwznw-1"},{"id":"flow:page:page:page-load#edge-mwldwznw-3","port":"next","source":"flow:page:page:page-load#api-mwldwznw-1","target":"flow:page:page:page-load#end-mwkmqv5u-1"}],"nodes":[{"id":"flow:page:page:page-load#trigger","type":"trigger","editor":{"x":120,"y":100}},{"id":"flow:page:page:page-load#end-mwkmqv5u-1","type":"end","editor":{"x":120,"y":244}},{"id":"flow:page:page:page-load#api-mwldwznw-1","type":"api","editor":{"x":353,"y":159},"params":{},"operationId":"detail"}],"policy":{"reentry":"ignore"},"variables":[],"entryNodeId":"flow:page:page:page-load#trigger"}],"variables":[],"propBindings":[],"eventBindings":[{"id":"binding:page:page:page-load","event":"page-load","flowId":"flow:page:page:page-load","source":{"kind":"page"},"enabled":true}]} as unknown as PageDesignV2['behavior']
+const behaviorDocument = {"flows":[{"id":"flow:page:page:page-load","name":"page-load","edges":[{"id":"flow:page:page:page-load#edge-mwldwznw-2","port":"next","source":"flow:page:page:page-load#trigger","target":"flow:page:page:page-load#api-mwldwznw-1"},{"id":"flow:page:page:page-load#edge-mwldwznw-3","port":"next","source":"flow:page:page:page-load#api-mwldwznw-1","target":"flow:page:page:page-load#end-mwkmqv5u-1"}],"nodes":[{"id":"flow:page:page:page-load#trigger","type":"trigger","editor":{"x":120,"y":100}},{"id":"flow:page:page:page-load#end-mwkmqv5u-1","type":"end","editor":{"x":120,"y":244}},{"id":"flow:page:page:page-load#api-mwldwznw-1","type":"api","editor":{"x":353,"y":159},"params":{"id":{"source":"variable","variableId":"flow:page:page:page-load#var-mwrs522r-1"}},"operationId":"detail"}],"policy":{"reentry":"ignore"},"variables":[{"id":"flow:page:page:page-load#var-mwrs522r-1","code":"variable1","type":{"type":"string","nullable":false},"label":"变量 1","nullable":false,"defaultValue":""}],"entryNodeId":"flow:page:page:page-load#trigger"}],"variables":[],"propBindings":[],"eventBindings":[{"id":"binding:page:page:page-load","event":"page-load","flowId":"flow:page:page:page-load","source":{"kind":"page"},"enabled":true}]} as unknown as PageDesignV2['behavior']
 // 页面级能力与组件实例分开：表格刷新/查询是列表代理，不伪装成物料实例。
 const behaviorTargets: Record<string, unknown> = {
   '39508b98-dd03-4348-b2a9-632b9be9a18c': { refresh: () => list.load(), search: () => list.search() },
@@ -63,12 +63,17 @@ const pageBehavior = createGeneratedPageRuntime({
     invokeOperation: async (operationId: string, params: Record<string, unknown>, context: { nodeId: string; signal: AbortSignal }) => {
       // 约定：operation 末段是 CRUD 动作（list/detail/create/update/remove/export），复用页面自有 api 模块
       const method = operationId.split('.').pop() ?? ''
+      const requireOperationId = (operationId: string, params: Record<string, unknown>) => {
+        const id = params.id
+        if (id === undefined || id === null || id === '') throw new Error('operation「' + operationId + '」缺少 params.id')
+        return id as never
+      }
       if (method === 'list') return await demoApi.list(params as never, context.signal)
       if (method === 'export') return await demoApi.export(params as never, context.signal)
       if (method === 'create') return await demoApi.create(params as never, context.signal)
-      if (method === 'update') return await demoApi.update(params.id as never, params as never, context.signal)
-      if (method === 'detail') return await demoApi.detail(params.id as never, context.signal)
-      if (method === 'remove') return await demoApi.remove(params.id as never, context.signal)
+      if (method === 'update') return await demoApi.update(requireOperationId(operationId, params), params as never, context.signal)
+      if (method === 'detail') return await demoApi.detail(requireOperationId(operationId, params), context.signal)
+      if (method === 'remove') return await demoApi.remove(requireOperationId(operationId, params), context.signal)
       throw new Error('operation「' + operationId + '」不在本页 api 模块的 CRUD 动作内，请在 overrides 中注入')
     },
   },
@@ -85,7 +90,13 @@ function disposeBehaviorTargets() {
   for (const dispose of behaviorTargetDisposers.values()) dispose()
   behaviorTargetDisposers.clear()
 }
-onMounted(() => { void pageBehavior.pageLoad() })
+onMounted(() => {
+  void pageBehavior.pageLoad().then(results => {
+    if (!pageBehavior.runtime.disposed && results.some(result => result.status === 'failed' && !result.handled)) {
+      pushToast('页面初始化失败', 'danger')
+    }
+  })
+})
 onBeforeUnmount(() => { disposeBehaviorTargets(); pageBehavior.dispose() })
 
 const columns: Column[] = [
