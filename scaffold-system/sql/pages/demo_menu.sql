@@ -26,10 +26,16 @@ UPDATE sys_menu
 SET menu_name = '订单',
     icon = 'grid',
     sort = 1,
+    visible = 1,
+    status = 1,
     update_by = 'system'
 WHERE parent_id = 0 AND menu_type = 'dir' AND path = '/order';
 
 SET @demo_group := (SELECT id FROM sys_menu WHERE parent_id = 0 AND menu_type = 'dir' AND path = '/order' LIMIT 1);
+
+-- 先记住旧父目录，再移动页面菜单。路由改组或删掉分组后，旧目录只有在没有其它页面时才隐藏，
+-- 不能按路径直接处理，否则同一目录下仍在使用的页面会被一起撤掉。
+SET @demo_previous_group := (SELECT parent_id FROM sys_menu WHERE permission = 'demo:demo:list' LIMIT 1);
 
 INSERT INTO sys_menu (parent_id, menu_name, menu_type, icon, path, component, permission, sort, visible, status, create_by, update_by)
 SELECT @demo_group, '测试', 'menu', 'shield', '/order/demo', 'demo/Demo', 'demo:demo:list', 1, 1, 1, 'system', 'system'
@@ -48,6 +54,16 @@ SET parent_id = @demo_group,
     sort = 1,
     update_by = 'system'
 WHERE permission = 'demo:demo:list';
+
+UPDATE sys_menu previous_group
+LEFT JOIN sys_menu child ON child.parent_id = previous_group.id
+SET previous_group.visible = 0,
+    previous_group.status = 0,
+    previous_group.update_by = 'system'
+WHERE previous_group.id = @demo_previous_group
+  AND previous_group.id <> @demo_group
+  AND previous_group.menu_type = 'dir'
+  AND child.id IS NULL;
 
 INSERT INTO sys_menu (parent_id, menu_name, menu_type, icon, path, component, permission, sort, visible, status, create_by, update_by)
 SELECT @demo_menu, '新增测试模型', 'btn', '', '', '', 'demo:demo:add', 1, 1, 1, 'system', 'system'
