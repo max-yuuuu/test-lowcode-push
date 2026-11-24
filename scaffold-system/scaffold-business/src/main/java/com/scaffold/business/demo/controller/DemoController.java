@@ -5,6 +5,8 @@ import com.scaffold.business.demo.domain.DemoRow;
 import com.scaffold.business.demo.domain.DemoWriteRequest;
 import com.scaffold.business.demo.domain.DemoReconcile20261117Request;
 import com.scaffold.business.demo.domain.DemoReconcile20261117Response;
+import com.scaffold.business.demo.domain.DemoBatchShipRequest;
+import com.scaffold.business.demo.domain.DemoBatchShipResponse;
 import com.scaffold.business.demo.service.DemoService;
 import com.scaffold.common.domain.PageQuery;
 import com.scaffold.common.domain.PageResult;
@@ -107,5 +109,16 @@ public class DemoController {
     @OperLog(module = "测试模型", action = "对账验证")
     public R<DemoReconcile20261117Response> reconcile20261117(@RequestBody DemoReconcile20261117Request request) {
         return R.success(service.reconcile20261117(request));
+    }
+
+    /**
+     * 批量发货（自定义接口 {@code batch_ship}，契约 v1）。
+     * 实现住 {@code DemoBatchShipExtension}（C 档）；未实现时返回 {@code OPERATION_NOT_IMPLEMENTED}。
+     */
+    @PostMapping("/batch_ship")
+    @RequiresPermission("sales:sales_order:ship")
+    @OperLog(module = "测试模型", action = "批量发货")
+    public R<DemoBatchShipResponse> batchShip(@RequestBody DemoBatchShipRequest request) {
+        return R.success(service.batchShip(request));
     }
 }

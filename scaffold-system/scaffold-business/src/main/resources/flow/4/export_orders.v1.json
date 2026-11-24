@@ -1,0 +1,76 @@
+{
+  "document" : {
+    "nodes" : [ {
+      "id" : "input",
+      "kind" : "input",
+      "next" : "validate"
+    }, {
+      "id" : "validate",
+      "kind" : "validate",
+      "next" : "xlsx_file"
+    }, {
+      "assignments" : [ {
+        "value" : {
+          "source" : "literal",
+          "value" : "orders.xlsx"
+        },
+        "variableId" : "var_file_name"
+      }, {
+        "value" : {
+          "source" : "literal",
+          "value" : "/api/files/demo/orders.xlsx"
+        },
+        "variableId" : "var_download_url"
+      } ],
+      "id" : "xlsx_file",
+      "kind" : "map",
+      "next" : "audit"
+    }, {
+      "id" : "audit",
+      "kind" : "audit",
+      "next" : "end"
+    }, {
+      "id" : "end",
+      "kind" : "end",
+      "valueBindings" : {
+        "downloadUrl" : {
+          "source" : "variable",
+          "variableId" : "var_download_url"
+        },
+        "fileName" : {
+          "source" : "variable",
+          "variableId" : "var_file_name"
+        }
+      }
+    } ],
+    "schemaVersion" : 1,
+    "start" : "input",
+    "variables" : [ {
+      "code" : "fileName",
+      "defaultValue" : "",
+      "id" : "var_file_name",
+      "label" : "文件名称",
+      "nullable" : false,
+      "type" : {
+        "nullable" : false,
+        "type" : "string"
+      }
+    }, {
+      "code" : "downloadUrl",
+      "defaultValue" : "",
+      "id" : "var_download_url",
+      "label" : "下载地址",
+      "nullable" : false,
+      "type" : {
+        "nullable" : false,
+        "type" : "string"
+      }
+    } ]
+  },
+  "modelId" : 4,
+  "models" : { },
+  "operationCode" : "export_orders",
+  "permissionCode" : "sales:sales_order:export",
+  "projectId" : 1,
+  "version" : 1
+}
