@@ -6,6 +6,8 @@ import com.scaffold.business.demo.domain.DemoRow;
 import com.scaffold.business.demo.domain.DemoWriteRequest;
 import com.scaffold.business.demo.domain.DemoReconcile20261117Request;
 import com.scaffold.business.demo.domain.DemoReconcile20261117Response;
+import com.scaffold.business.demo.domain.DemoBatchShipRequest;
+import com.scaffold.business.demo.domain.DemoBatchShipResponse;
 import com.scaffold.business.demo.mapper.DemoMapper;
 import com.scaffold.common.domain.PageQuery;
 import com.scaffold.common.domain.PageResult;
@@ -37,12 +39,14 @@ public class DemoService {
     private final DemoExtension extension;
     private final DemoArchiveExtension archiveExtension;
     private final DemoReconcile20261117Extension reconcile20261117Extension;
+    private final DemoBatchShipExtension batchShipExtension;
 
-    public DemoService(DemoMapper mapper, DemoExtension extension, DemoArchiveExtension archiveExtension, DemoReconcile20261117Extension reconcile20261117Extension) {
+    public DemoService(DemoMapper mapper, DemoExtension extension, DemoArchiveExtension archiveExtension, DemoReconcile20261117Extension reconcile20261117Extension, DemoBatchShipExtension batchShipExtension) {
         this.mapper = mapper;
         this.extension = extension;
         this.archiveExtension = archiveExtension;
         this.reconcile20261117Extension = reconcile20261117Extension;
+        this.batchShipExtension = batchShipExtension;
     }
 
     /** 分页列表。查询条件逐个平铺在签名上：前端传什么、SQL 查什么，不用翻到 Mapper 才看清楚 */
@@ -133,5 +137,14 @@ public class DemoService {
      */
     public DemoReconcile20261117Response reconcile20261117(DemoReconcile20261117Request request) {
         return reconcile20261117Extension.execute(request);
+    }
+
+    /**
+     * 批量发货（自定义接口 {@code batch_ship}，契约 v1）：委托
+     * {@code DemoBatchShipExtension}（C 档）。骨架默认抛 {@code OPERATION_NOT_IMPLEMENTED}；
+     * 事务边界由实现方自己声明，平台不替骨架方法包事务。
+     */
+    public DemoBatchShipResponse batchShip(DemoBatchShipRequest request) {
+        return batchShipExtension.execute(request);
     }
 }

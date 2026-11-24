@@ -1,0 +1,98 @@
+{
+  "document" : {
+    "nodes" : [ {
+      "id" : "input",
+      "kind" : "input",
+      "next" : "check_order"
+    }, {
+      "else" : "reject",
+      "id" : "check_order",
+      "kind" : "condition",
+      "then" : "archive",
+      "when" : {
+        "left" : {
+          "key" : "input",
+          "path" : [ "orderId" ],
+          "source" : "context"
+        },
+        "operator" : "gt",
+        "right" : {
+          "source" : "literal",
+          "value" : 0
+        }
+      }
+    }, {
+      "code" : "ORDER_ID_INVALID",
+      "id" : "reject",
+      "kind" : "error",
+      "message" : "订单编号必须是正整数"
+    }, {
+      "assignments" : [ {
+        "value" : {
+          "source" : "literal",
+          "value" : true
+        },
+        "variableId" : "var_archived"
+      }, {
+        "value" : {
+          "source" : "literal",
+          "value" : "2026-11-24T15:00:00"
+        },
+        "variableId" : "var_archived_at"
+      } ],
+      "id" : "archive",
+      "kind" : "map",
+      "next" : "validate"
+    }, {
+      "id" : "validate",
+      "kind" : "validate",
+      "next" : "audit"
+    }, {
+      "id" : "audit",
+      "kind" : "audit",
+      "next" : "end"
+    }, {
+      "id" : "end",
+      "kind" : "end",
+      "valueBindings" : {
+        "archived" : {
+          "source" : "variable",
+          "variableId" : "var_archived"
+        },
+        "archivedAt" : {
+          "source" : "variable",
+          "variableId" : "var_archived_at"
+        }
+      }
+    } ],
+    "schemaVersion" : 1,
+    "start" : "input",
+    "variables" : [ {
+      "code" : "archived",
+      "defaultValue" : false,
+      "id" : "var_archived",
+      "label" : "是否归档",
+      "nullable" : false,
+      "type" : {
+        "nullable" : false,
+        "type" : "boolean"
+      }
+    }, {
+      "code" : "archivedAt",
+      "defaultValue" : "",
+      "id" : "var_archived_at",
+      "label" : "归档时间",
+      "nullable" : false,
+      "type" : {
+        "nullable" : false,
+        "type" : "string"
+      }
+    } ]
+  },
+  "modelId" : 4,
+  "models" : { },
+  "operationCode" : "archive_order",
+  "permissionCode" : "sales:sales_order:archive",
+  "projectId" : 1,
+  "version" : 2
+}
