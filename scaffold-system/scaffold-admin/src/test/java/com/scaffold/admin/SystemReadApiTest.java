@@ -135,7 +135,7 @@ class SystemReadApiTest {
         );
         assertThat(depts.getStatusCode()).isEqualTo(HttpStatus.OK);
         List<Map<String, Object>> deptTree = listDataOf(depts.getBody());
-        assertThat(deptTree).extracting(row -> row.get("name")).contains("云原科技集团");
+        assertThat(deptTree).extracting(row -> row.get("name")).contains("摸鱼科技(烟台)有限公司");
         assertThat(childrenOf(deptTree.get(0))).extracting(row -> row.get("name")).contains("研发中心", "产品中心");
     }
 

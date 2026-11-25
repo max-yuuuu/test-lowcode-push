@@ -76,7 +76,7 @@ docker compose up -d --build
 | `CAPTCHA_ENABLED` | 登录图形验证码开关；生产保持 `true` | `true` |
 
 
-后端与 Redis 的连接在 compose 内固定为 `REDIS_HOST=redis`、`REDIS_PORT=6379`，Redis 未设密码（`REDIS_PASSWORD` 留空），因此 Redis 端口不对宿主机暴露。
+后端与 Redis 的连接在 compose 内固定为 `REDIS_HOST=redis`、`REDIS_PORT=6379`，Redis 未设密码（`REDIS_PASSWORD` 留空）。平台自托管那份 compose 另把 redis 映射到宿主机 `${REDIS_HOST_PORT:-6380}`，专供「前后端跑宿主进程」的本地开发（本地平台后端默认 `REDIS_PORT=6380`）：这样 MySQL 与 Redis 都归在同一个 compose 项目里，不必再单起一个散容器垫测试 Redis。
 
 ## 日常运维
 
@@ -129,6 +129,7 @@ docker exec scaffold-master-mysql-1 mysql -uroot -p"$DB_PASSWORD" --default-char
 
 - 种子管理员 `admin/admin123` 仅供本地开发；对外暴露前必须改密码，`.env` 里的 `DB_PASSWORD`、`JWT_SECRET` 也不要沿用默认值。
 - 内置 MySQL 的健康检查要登录，`docker inspect scaffold-master-mysql-1` 能看到 `DB_PASSWORD`，同机其他用户也能读；本机自托管没问题，多人共享的主机请改用外部 MySQL（不带 profile），健康检查就不会带凭据。
+- **空卷首建时的「healthy」可能早了几秒**：MySQL 官方镜像会先起一个只监听 socket 的临时初始化服务器导入 `V1`–`V3`，导完关掉它再起正式实例，中间有 5~10 秒连不上。compose 的健康检查因此走 TCP（`mysqladmin ping -h 127.0.0.1 --protocol=TCP`，临时服务器带 `--skip-networking`，探测不过），平台部署端在灌页面 SQL 前也会用同样的 TCP ping 等正式实例，连接类错误会等就绪后重跑幂等脚本。**别把健康检查改回 `-h localhost`**：socket 探测会把初始化中的临时服务器误报成 healthy，backend 提前启动、页面 SQL 落在空窗里就会报 `ERROR 2002 (HY000): Can't connect ... '/var/run/mysqld/mysqld.sock' (2)`（2026-11-19 真机现场）。
 - 前端登录页的验证码答案只存 Redis、不回传明文，自动化验证需要绕过时把 `CAPTCHA_ENABLED=false`（后端集成测试即以此关闭），验完记得改回 `true`。
 - 80 端口被本机其他 Web 服务占用时改 `WEB_PORT`；Linux 上非 root 用户默认不能绑定 1024 以下端口。
 - 前端镜像构建内置 `vue-tsc` 类型检查，类型错误会导致构建失败，这是预期行为。

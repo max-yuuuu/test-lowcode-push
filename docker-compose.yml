@@ -20,10 +20,14 @@ services:
     ports:
       - "${MYSQL_HOST_PORT:-3306}:3306"
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${DB_PASSWORD:-root}"]
+      # 走 TCP 而不是 socket：空卷首建时 MySQL 先起一个只监听 socket 的临时初始化服务器，
+      # 用 `-h localhost`（socket）会把「初始化中」误报成 healthy，backend 提前启动、
+      # 页面 SQL 也可能落在临时服务器关闭到正式实例监听之间的空窗里（ERROR 2002）。
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "--protocol=TCP", "-uroot", "-p${DB_PASSWORD:-root}"]
       interval: 10s
       timeout: 5s
-      retries: 10
+      retries: 20
+      start_period: 60s
 
   redis:
     image: redis:7-alpine

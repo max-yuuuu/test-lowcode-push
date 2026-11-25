@@ -72,6 +72,7 @@ for (const [name, invoke] of [
   ['get', (client: ReturnType<typeof createHttpClient>, signal: AbortSignal) => client.get('/sales/orders', undefined, signal)],
   ['post', (client: ReturnType<typeof createHttpClient>, signal: AbortSignal) => client.post('/sales/orders', {}, signal)],
   ['put', (client: ReturnType<typeof createHttpClient>, signal: AbortSignal) => client.put('/sales/orders/1', {}, signal)],
+  ['patch', (client: ReturnType<typeof createHttpClient>, signal: AbortSignal) => client.patch('/sales/orders/1', {}, signal)],
   ['delete', (client: ReturnType<typeof createHttpClient>, signal: AbortSignal) => client.delete('/sales/orders/1', signal)],
   ['download', (client: ReturnType<typeof createHttpClient>, signal: AbortSignal) => client.download('/sales/orders/export', undefined, signal)],
 ] as const) {

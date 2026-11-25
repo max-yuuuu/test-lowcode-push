@@ -7,13 +7,14 @@
 
 ## 项目强制开发准则
 
-本项目是供后续项目复用的 Spring Boot + Vue 后台管理脚手架，必须按“统一底座、统一组件、统一风格、统一能力复用”的方式开发。开发入口见 `README.md`，视觉规范见 `DESIGN.md`。
+本项目采用 Spring Boot + Vue；交付项目本地开发必须按“统一底座、统一组件、统一风格、统一能力复用”的方式开发。开发入口见 `README.md`，视觉规范见 `DESIGN.md`。
 
 
 ### 前端准则
 
 - 所有可复用的前端能力必须组件化，不允许在每个页面重复实现。
 - 所有后台页面必须遵守同一套设计语言，包括颜色、字体、字号、间距、圆角、边框、阴影、表格密度、按钮样式、弹窗样式和表单样式。
+- 列表操作列统一参考已有业务列表页：使用 `div.row-actions` 包裹 `PermissionButton`，采用 `icon-only` 图标按钮并提供 `label` 无障碍文案；不要在列表操作列直接铺设文字按钮或页面自定义操作样式。
 - 页面开发优先复用 `ListPage`、`useListPage` / `useTreeListPage`、`DataTable`、`SearchForm`、`FormDialog`、`RowActions` / `RowMenuItem`、`PermissionButton`、`DictSelect`、`DeptTree`、`DeptSelect`、`UserSelect`、`PermissionTree`、`TreeSelect`、`DateInput` / `DateRangePicker`、`NumberInput` / `Textarea`、`Tabs` / `TabPane`、`Upload` / `Photo` / `ImageField`、`Descriptions` / `DescriptionsItem`，以及 `usePopover`、`dateValue`、`upload` 三个 composable，不在页面重复拼装公共列表、表单、日期、上传或浮层能力。
 - 上述物料与珍珠玻璃样式住在 npm 包 `@yuanda-lowcode-ai/scaffold-ui`：页面按子路径引用（`@yuanda-lowcode-ai/scaffold-ui/components/ui`、`@yuanda-lowcode-ai/scaffold-ui/components/business`、`@yuanda-lowcode-ai/scaffold-ui/composables/list`、`@yuanda-lowcode-ai/scaffold-ui/theme.css`），不再写 `@/components/...`。包内**不得** import 宿主的 `@/api`、`@/composables/auth`、`@/directives`，也不读 `import.meta.env`；需要宿主能力时扩展 `installScaffoldUi({ http, permission, dict })` 的注入契约（宿主适配在 `src/api/scaffold-providers.ts`），而不是让包去够宿主。升级物料就是改 `package.json` 里的版本号再 `npm install`，不把组件源码搬进本项目。
 - 组件「能被配什么」（事件名、方法名、参数与允许来源）的唯一出处是物料包的 `@yuanda-lowcode-ai/scaffold-ui/capabilities`，发布前的校验是 `@yuanda-lowcode-ai/scaffold-ui/utils/actions`、运行期的执行是 `@yuanda-lowcode-ai/scaffold-ui/composables/actions`。**页面与生成物都不许再抄一份名单** —— 抄出来的名字与组件真实 `defineEmits` / `defineExpose` 无关，代价是配出一段点了没反应的动作，而单测与构建全绿。
@@ -64,25 +65,11 @@
 ## 版本与文档
 
 - 不主动 commit。完成一个逻辑单元后，提出建议的 commit message 供用户确认，确认后再提交；用户明确要求时可直接提交。
-- 代码变更后维护项目中的 `changelog.md`（记录变更内容），该文件不存在则创建。
-- 模块、接口或调用链改变时同步 `PROJECT_MAP.md`（该文件不存在则创建）和相关说明；保留历史日志与人工备注。
-
-## 分支与 PR 流程
-
-固定一条路径：**任务完成 → 基于 `dev` 的新分支提交 → 向 `dev` 开 PR**。用户指定走这条流程时，提交、推送、开 PR 视为已授权，不必逐次确认；commit message 与 PR 内容在完成后一并报告。
-
-- **一个任务一条分支**，命名 `<类型>/<范围>`：`feat/lowcode-pr5d-frontend-templates`、`docs/lowcode-generation-caliber`、`chore/agents-branch-workflow`。开工时从最新的远端 dev 拉：`git fetch --prune <远端>` 后 `git switch -c <新分支> <远端>/dev`。
-- **已合并的分支不再追加提交**。PR 合进 dev 就是收口了，往那条分支上继续推会把新工作混进已合并的 PR（本仓库真踩过：PR 合并后同分支又推两个提交，只能另开分支重搬）。
-- **提交前确认基点**：`git log --oneline <远端>/dev..HEAD` 的条数必须正好是本任务要提的提交。多出来的就是基点不对 —— 前一任务的 PR 还没合，此时等它合并，或把新分支指向那个 tip 并在 PR 描述里写明前置 PR。
-- **下一个任务开始前先合并**：任务之间是串行依赖的（后一个要用前一个的产物），所以下一个任务从 dev 拉分支的前提是前一个 PR 已合并；不要为了赶进度自行叠加。
-- 合并方向只有 `feature → dev`，`dev → main` 只做阶段性收口，永不反向、不直接在 dev 上写。合并不强推，优先 `--ff-only`，有分叉就用合并提交。
-- **共享分支（`dev` / `main`）绝不 force-push**，也不擅自删远端分支或改仓库配置（子模块指针、remote、`.gitmodules`）—— 这些一律先与用户确认。本地还没推过的分支重指基点是安全的。
-- changelog 与 `PROJECT_MAP.md` 跟着所属任务一起进 PR，不让文档跨 PR 悬空；代码与文档可以拆成同 PR 的两条提交。
 
 ## 部署
 
-- 本脚手架交付本地开发底座，并附带单主机自托管的容器部署：`docker-compose.yml`（前端 nginx + 后端 + Redis，MySQL 在 `mysql` profile 内按需启用）、两份 `Dockerfile` 与 `docs/docker-deployment.md`。域名、TLS、多副本与云端编排不在默认交付范围内，需要时另行设计并先与用户确认。
-- 开展部署工作前先看 `docs/docker-deployment.md`，按其中的流程与验证方法执行；涉及服务器 / 部署环境的操作同样先读该指南，找不到或覆盖不到时先告知用户，不凭经验硬上。
+- 本项目附带单主机自托管的容器部署：`docker-compose.yml`（前端 nginx + 后端 + Redis，MySQL 在 `mysql` profile 内按需启用）与两份 `Dockerfile`。部署步骤见 `README.md`，变量说明见 `.env.example`。域名、TLS、多副本与云端编排不在默认交付范围内，需要时另行设计并先与用户确认。
+- 开展部署工作前先读项目 README 与环境变量示例；涉及服务器 / 部署环境的操作先确认目标与回滚方式，找不到覆盖流程时先告知用户，不凭经验硬上。
 
 ## 工具调用与多智能体
 

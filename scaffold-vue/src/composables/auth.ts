@@ -3,6 +3,7 @@ import type { RouteRecordRaw } from 'vue-router'
 import { ApiError, authApi, authSession, type CurrentUser, type LoginRequest, type LoginResponse, type RegisterRequest, type RouteItem } from '@/api'
 import { setPermissions } from '@/composables/permission'
 import type { NavGroup, NavLeaf } from '@/data'
+import { resolveMenuIcon } from '@/shell/menu-icon'
 import { resolveView } from '@/shell/views'
 import { clearDictCache } from '@yuanda-lowcode-ai/scaffold-ui/composables/dict'
 import { clearDeptCache } from '@yuanda-lowcode-ai/scaffold-ui/composables/dept'
@@ -63,7 +64,7 @@ function normalizePath(path?: string) {
 function leafOf(item: RouteItem): NavLeaf | null {
   const path = normalizePath(item.path)
   if (!path || !resolveComponent(item.component)) return null
-  return { key: routeNameOf(path), label: item.name, icon: item.icon || 'file', path }
+  return { key: routeNameOf(path), label: item.name, icon: resolveMenuIcon(path, item.icon), path }
 }
 
 function buildNav(tree: RouteItem[]): NavGroup[] {
@@ -76,7 +77,7 @@ function buildNav(tree: RouteItem[]): NavGroup[] {
       continue
     }
     const items = children.map(leafOf).filter((leaf): leaf is NavLeaf => Boolean(leaf))
-    if (items.length) groups.push({ key: `group-${node.id ?? node.name}`, label: node.name, icon: node.icon || 'file', items })
+    if (items.length) groups.push({ key: `group-${node.id ?? node.name}`, label: node.name, icon: resolveMenuIcon(node.path, node.icon), items })
   }
   return groups
 }
