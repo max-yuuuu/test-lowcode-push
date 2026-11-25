@@ -37,11 +37,10 @@ const behaviorTargets: Record<string, unknown> = {
 }
 const behaviorComponentTypes: Record<string, string> = {
   'dd1f08ee-9967-4197-b51c-d5e23d412b09': 'SearchForm',
+  '39508b98-dd03-4348-b2a9-632b9be9a18c': 'DataTable',
   'f23373ff-f73a-4d1e-b942-33b07c044508': 'Toolbar',
   'ae256b5b-24d5-41f4-a61d-0f6e74a774a7': 'Button',
   '3d5c2b90-2447-4427-afd6-dc8ff2548e91': 'Button',
-  'ff7b8841-ab7d-4363-9141-9cfdfe5f259b': 'SearchForm',
-  '39508b98-dd03-4348-b2a9-632b9be9a18c': 'DataTable',
   '79732a73-b257-4457-838f-829a5bd7754e': 'RowActions',
   '516b3277-a7b7-4436-b5aa-ea89e38a81bd': 'Button',
   '38d4e50d-85e3-471d-93de-d4e71b5b25c8': 'Button',
