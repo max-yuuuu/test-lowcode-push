@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
-/** 导出订单（Flow 接口 {@code export_orders}，发布版本 v1）。 */
+/** 导出订单（Flow 接口 {@code export_orders}，发布版本 v3）。 */
 @RestController
 @RequestMapping("/api/demo/demo")
 public class DemoExportOrdersFlowController {
@@ -37,7 +37,7 @@ public class DemoExportOrdersFlowController {
     public R<DemoExportOrdersResponse> exportOrders(@RequestBody(required = false) DemoExportOrdersRequest request) {
         Map<String, Object> input = request == null ? Map.of()
                 : objectMapper.convertValue(request, new TypeReference<Map<String, Object>>() {});
-        Map<String, Object> output = flowExecutor.execute(4L, "export_orders", 1, input);
+        Map<String, Object> output = flowExecutor.execute(4L, "export_orders", 3, input);
         try {
             return R.success(objectMapper.convertValue(output, DemoExportOrdersResponse.class));
         } catch (IllegalArgumentException conversionError) {
