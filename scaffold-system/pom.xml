@@ -30,6 +30,7 @@
     <modules>
         <module>scaffold-common</module>
         <module>scaffold-framework</module>
+        <module>scaffold-flow-runtime</module>
         <module>scaffold-system</module>
         <module>scaffold-business</module>
         <module>scaffold-admin-core</module>
@@ -59,6 +60,11 @@
             <dependency>
                 <groupId>com.scaffold</groupId>
                 <artifactId>scaffold-framework</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.scaffold</groupId>
+                <artifactId>scaffold-flow-runtime</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

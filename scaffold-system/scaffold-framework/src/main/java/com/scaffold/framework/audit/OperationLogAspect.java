@@ -113,7 +113,7 @@ public class OperationLogAspect {
                 || arg instanceof Model;
     }
 
-    private void maskSensitiveFields(JsonNode node) {
+    void maskSensitiveFields(JsonNode node) {
         if (node instanceof ObjectNode objectNode) {
             objectNode.fieldNames().forEachRemaining(field -> {
                 JsonNode child = objectNode.get(field);
@@ -133,6 +133,7 @@ public class OperationLogAspect {
     private boolean isSensitive(String field) {
         String lower = field.toLowerCase();
         return lower.contains("password")
+                || lower.contains("credential")
                 || lower.contains("token")
                 || lower.contains("secret")
                 || lower.contains("authorization");

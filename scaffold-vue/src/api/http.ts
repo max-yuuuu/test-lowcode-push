@@ -15,6 +15,7 @@ export interface HttpClient {
   get<T>(path: string, query?: QueryParams, signal?: AbortSignal): Promise<T>
   post<T>(path: string, body?: unknown, signal?: AbortSignal): Promise<T>
   put<T>(path: string, body?: unknown, signal?: AbortSignal): Promise<T>
+  patch<T>(path: string, body?: unknown, signal?: AbortSignal): Promise<T>
   delete<T>(path: string, signal?: AbortSignal): Promise<T>
   download(path: string, query?: QueryParams, signal?: AbortSignal): Promise<Blob>
   /** 导出接口以 POST + 表单参数接收查询条件（沿用旧后端 $download.post 的传参方式） */
@@ -29,13 +30,15 @@ export class ApiError extends Error {
   code: number
   status: number
   traceId?: string
+  data?: unknown
 
-  constructor(message: string, code: number, status: number, traceId?: string) {
+  constructor(message: string, code: number, status: number, traceId?: string, data?: unknown) {
     super(message)
     this.name = 'ApiError'
     this.code = code
     this.status = status
     this.traceId = traceId
+    this.data = data
   }
 }
 
@@ -65,7 +68,7 @@ export function createHttpClient(options: HttpClientOptions = {}): HttpClient {
     const payload = await parseJson<ApiResponse<T>>(response)
     if (!response.ok || payload.code !== 200) {
       if ((payload.code === 401 || response.status === 401) && token && token === tokenProvider()) unauthorizedHandler?.()
-      throw new ApiError(payload.message || '请求失败', payload.code || response.status, response.status, payload.traceId)
+      throw new ApiError(payload.message || '请求失败', payload.code || response.status, response.status, payload.traceId, payload.data)
     }
     return payload.data
   }
@@ -95,7 +98,7 @@ export function createHttpClient(options: HttpClientOptions = {}): HttpClient {
     if (!response.ok) {
       const payload = await parseJson<ApiResponse<unknown>>(response)
       if ((payload.code === 401 || response.status === 401) && token && token === tokenProvider()) unauthorizedHandler?.()
-      throw new ApiError(payload.message || fallback, payload.code || response.status, response.status, payload.traceId)
+      throw new ApiError(payload.message || fallback, payload.code || response.status, response.status, payload.traceId, payload.data)
     }
     return response.blob()
   }
@@ -104,6 +107,7 @@ export function createHttpClient(options: HttpClientOptions = {}): HttpClient {
     get: (path, query, signal) => request('GET', path, undefined, query, signal),
     post: (path, body, signal) => request('POST', path, body, undefined, signal),
     put: (path, body, signal) => request('PUT', path, body, undefined, signal),
+    patch: (path, body, signal) => request('PATCH', path, body, undefined, signal),
     delete: (path, signal) => request('DELETE', path, undefined, undefined, signal),
     download,
     downloadForm,
