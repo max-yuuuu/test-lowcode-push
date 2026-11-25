@@ -1,118 +1,91 @@
-# 通用后台管理脚手架
+# 订单中台
 
-用于后续后台管理系统开发的 Spring Boot + Vue 底座。包含认证、菜单与按钮权限、数据权限、组织管理、字典、参数、日志和工作台；新增项目在此基础上实现业务模块。
+本项目通过低代码平台发布，项目编码 `order-service`，平台生成分支为 `platform-generated`。README 根据项目标记与仓库中已发布的业务产物生成。
 
+## 已发布业务
 
-
-## 开发入口
-
-- [设计规范](DESIGN.md)：珍珠玻璃主题、组件复用及交互规范。
-- [开发约定](AGENTS.md)。
-- [后端架构](docs/backend-architecture.md)、[前后端接口约定](docs/frontend-backend-integration.md)、[前端架构](docs/admin-redesign-architecture.md)。
-- [Docker 部署指南](docs/docker-deployment.md)：Compose 一键编排前端 / 后端 / Redis / 可选 MySQL。
-
-## 目录与技术栈
-
-| 目录 | 用途 | 技术栈 |
+| 业务模块 | 后端位置 | 前端页面 |
 | --- | --- | --- |
-| `scaffold-system` | 后端 Maven 多模块工程 | Java 17+、Spring Boot 3.5、MyBatis、MySQL、Redis、JWT |
-| `scaffold-vue` | 管理后台（宿主 app） | Vue 3、TypeScript、Vite 6、Vue Router 4、GSAP 3；外壳、路由、登录与业务页面 |
-| `scaffold-system/sql` | 首次初始化脚本 | `V1__init_schema.sql` 建表，`V2__seed_data.sql` 初始化数据，`V3__system_resource_menu.sql` 补资源监测菜单；初始化时这三份按文件名顺序导入 |
-| `docs` | 当前架构说明 | 后端架构、前后端接口约定和前端组件架构 |
+| `demo` | `scaffold-system/scaffold-business/src/main/java/com/scaffold/business/demo/` | `Demo.vue` |
+| `e2e_order_trace` | `scaffold-system/scaffold-business/src/main/java/com/scaffold/business/e2e_order_trace/` | — |
+| `order_detail` | `scaffold-system/scaffold-business/src/main/java/com/scaffold/business/order_detail/` | — |
+| `order_list` | `scaffold-system/scaffold-business/src/main/java/com/scaffold/business/order_list/` | `OrderList.vue` |
+| `sales_order` | `scaffold-system/scaffold-business/src/main/java/com/scaffold/business/sales_order/` | `SalesOrder.vue` |
+| `t11_demo` | `scaffold-system/scaffold-business/src/main/java/com/scaffold/business/t11_demo/` | `T11Demo.vue` |
+| `t11_verify_20261118` | `scaffold-system/scaffold-business/src/main/java/com/scaffold/business/t11_verify_20261118/` | — |
 
-当前包含工作台与 10 个管理页面：系统管理 8（用户、角色、部门、菜单、字典、参数、岗位、资源监测）与系统监控 2（操作日志、登录日志）。建筑、工作流模块已移除。
+### 数据脚本
 
+- `scaffold-system/sql/pages/demo_table.sql`
+- `scaffold-system/sql/pages/order_list_table.sql`
+- `scaffold-system/sql/pages/sales_order_table.sql`
+- `scaffold-system/sql/pages/t11_demo_table.sql`
+
+顶层 `V1__init_schema.sql`、`V2__seed_data.sql`、`V3__system_resource_menu.sql` 用于首次初始化；`sql/pages/` 下的业务脚本需审核后手动执行。
+
+### Flow 快照
+
+- `scaffold-system/scaffold-business/src/main/resources/flow/4/archive_order.v2.json`
+- `scaffold-system/scaffold-business/src/main/resources/flow/4/export_orders.v1.json`
+- `scaffold-system/scaffold-business/src/main/resources/flow/4/export_orders.v3.json`
+
+## 目录
+
+| 目录 | 职责 |
+| --- | --- |
+| `scaffold-system/scaffold-common` | 统一返回、分页、异常与导出工具 |
+| `scaffold-system/scaffold-framework` | 认证、权限、数据权限、审计与租户管道 |
+| `scaffold-system/scaffold-flow-runtime` | Flow 协议校验与受限执行内核 |
+| `scaffold-system/scaffold-system` | 用户、角色、菜单、字典、参数、日志等系统能力 |
+| `scaffold-system/scaffold-business` | 已发布业务模块与人工扩展点 |
+| `scaffold-system/scaffold-admin-core` | 健康检查、公共配置与本地建库工具 |
+| `scaffold-system/scaffold-admin` | Spring Boot 启动模块 |
+| `scaffold-vue` | Vue 3 管理后台与已发布业务页面 |
 
 ## 本地启动
 
-准备 JDK 17 或更新版本、Maven、Node.js 22+、MySQL 5.7+ 和 Redis；前后端依赖均使用项目现有配置。
-
-后端读取进程环境变量，不会自动加载 `.env` 文件；可在 IDE 运行配置或启动终端中设置：
-
-| 变量 | 中文说明 | 默认值 |
-| --- | --- | --- |
-| `JWT_SECRET` | JWT 签名密钥，至少 32 字节且不能全为空白 | 必填，无默认值 |
-| `DB_HOST` / `DB_PORT` | MySQL 地址 / 端口 | `localhost` / `3306` |
-| `DB_NAME` | 数据库名称 | `scaffold_system` |
-| `DB_USERNAME` / `DB_PASSWORD` | 数据库账号 / 密码 | 本地开发默认账号；按实际环境配置 |
-| `DB_TIMEZONE` | 数据库连接与会话时区 | `+08:00` |
-| `REDIS_HOST` / `REDIS_PORT` | Redis 地址 / 端口 | `localhost` / `6379` |
-| `REDIS_PASSWORD` | Redis 密码 | 空；按实际环境配置 |
-| `CAPTCHA_ENABLED` | 登录图形验证码开关；关闭时登录不再校验验证码 | `true` |
-| `JSON_TIMEZONE` | JSON 序列化时区，须与 `DB_TIMEZONE` 的会话时区对齐，否则日期整体偏移 | `GMT+8` |
-| `VITE_API_PROXY_TARGET` | 前端开发代理的后端地址 | `http://localhost:8080` |
-
-可在启动后端的终端中生成本机密钥；生成结果保留在当前进程环境，不写入仓库：
+准备 JDK 17+、Maven、Node.js 22+、MySQL 5.7+ 与 Redis。后端从进程环境读取配置，不会自动加载 `.env`。
 
 ```bash
 export JWT_SECRET="$(openssl rand -hex 32)"
+export DB_HOST=localhost DB_PORT=3306 DB_NAME=scaffold_system
+export DB_USERNAME=root DB_PASSWORD=root
+export REDIS_HOST=localhost REDIS_PORT=6379
 ```
 
-使用 IDE 时将密钥配置到运行环境。未配置或不足 32 字节时后端启动失败；保留同一密钥可让重启前的有效 token 继续验签，更换密钥会使旧 token 失效。
-
-首次创建空的 `scaffold_system` 库后，按顺序导入 `sql/` 顶层的三份 `V*__*.sql`（只导顶层，不递归子目录）；mysql 客户端须使用 `--default-character-set=utf8mb4`，并通过 `--init-command="SET time_zone='+08:00'"` 设置会话时区。也可在 IDE 运行 `scaffold-admin-core` 中的 `com.scaffold.admin.util.DbInit`，该工具使用同一组 `DB_*` 变量并按版本顺序初始化（自动发现顶层 `V*__*.sql`，不递归子目录）；参数 `fix` 会删除整个目标库，仅在核实库名、备份且明确同意重建时使用。
+首次使用空库时，按文件名顺序导入 `scaffold-system/sql/` 顶层的三份 `V*__*.sql`，不要递归导入 `sql/pages/`。也可运行 `com.scaffold.admin.util.DbInit`；其 `fix` 参数会删除目标库，只有确认库名并备份后才能使用。
 
 ```bash
-# 在 scaffold-system 目录构建与启动后端
+cd scaffold-system
 mvn -pl scaffold-admin -am package -DskipTests
 java -jar scaffold-admin/target/scaffold-admin-0.1.0-SNAPSHOT.jar
 ```
 
-
 ```bash
-# 在 scaffold-vue 目录启动前端；首次使用先 npm install
+cd scaffold-vue
+npm install
 npm run dev
 ```
 
+前端默认地址为 `http://localhost:5173`，`/api` 代理到 `http://localhost:8080`。种子管理员为 `admin`，开发密码为 `admin123`；接入实际环境前必须修改密码、JWT 密钥与数据库/Redis 凭据。
 
-浏览器访问 `http://localhost:5173`，后端本地端口为 `8080`；前端统一通过 `/api` 代理访问后端。
-
-需要整套容器化部署（前端 nginx + 后端 + Redis + 可选 MySQL）时见 [Docker 部署指南](docs/docker-deployment.md)，本机开发仍按上面的命令启动。
-
-本机反复启停后端时的几条硬事实写在同一份指南的「本地直接跑进程（不起容器）的几条事实」一节：重打 jar 要 `clean package`（增量构建可能不重打 fat jar）、`JWT_SECRET` 一变所有会话就 401、启动变量请固化成不入库的 `.env.local` 而不是从旧进程 `ps eww` 里抓、测试用 `3316`/`6380` 别撞业务库、改包内组件源码宿主即时生效不用重装。
-
-种子库管理员为 `admin`，开发密码为 `admin123`；仅用于本地开发，接入实际环境前请修改密码并配置自己的数据库与 Redis 凭据。种子组织和用户为示例，电话留空，邮箱使用 `example.com`。验证码为服务端渲染的 PNG 图片，答案只存 Redis 不回传明文，按图上字符输入；`CAPTCHA_ENABLED=false` 可整关（后端集成测试即以此关闭，无需读图）。超级管理员可见全部启用且可见的已注册菜单，并拥有全部操作权限；其余种子角色默认未授予菜单，需在角色管理中分配。无可用菜单的账号登录后显示“暂未分配可用菜单”。
-
-## 新业务模块
-
-1. 先设计业务表与中文字段含义；默认包含 `create_by`、`update_by`、`create_time`、`update_time` 四个审计字段。
-2. 复用 `scaffold-common` 的返回、分页与异常，以及 `scaffold-framework` 的权限、数据权限、操作日志能力。
-3. 前端列表复用 `ListPage`、`useListPage` / `useTreeListPage`；表单复用 `FormDialog`、`Field` 和现有控件，操作复用 `PermissionButton`。
-4. 在 `src/api` 接入统一 HTTP 客户端，页面按 `views/<sys_menu.component>.vue` 目录约定放置即可被 `src/composables/auth.ts` 自动解析（文件名与 `component` 值不同名时才需要在 `COMPONENT_ALIAS` 登记别名），再添加菜单和按钮权限。
-5. 按角色配置菜单和数据范围，验证低权限账号的真实接口拒绝行为、查询、分页、导出及表单校验。
-6. 同步项目地图、相关接口说明和更新日志。
-
-
-## 验证
-
-不连接数据库和 Redis 的测试与编译：
+## 容器部署
 
 ```bash
-# 在 scaffold-system 目录
-mvn -pl scaffold-framework -am test
-mvn -pl scaffold-admin -am package -DskipTests
+cp .env.example .env
+# 修改 .env 中的 JWT_SECRET、数据库账号与端口
+docker compose --profile mysql up -d --build
 ```
 
-完整后端集成测试需要配置上述环境变量并准备独立校验库：
+复用外部 MySQL 时不要启用 `mysql` profile，并把 `DB_HOST` 改为容器可达地址。完整变量说明见 `.env.example`。
 
-```bash
-# 在 scaffold-system 目录；建议用独立校验库，测试会写入夹具和日志
-mvn -pl scaffold-admin -am test
-```
+## 开发约定
 
-```bash
-# 在 scaffold-vue 目录
-npm run test:unit
-npm run build
-# 已安装 Python Playwright 与 Chromium 时，可验证真实浏览器会话与权限
-python3 scripts/session-regression.py
-```
-
-
-浏览器回归脚本只创建并删除自己生成的测试角色和用户，不清空表（用户与角色按逻辑删除，行会留在表里、`deleted` 置 1）；管理员密码可通过 `SCAFFOLD_TEST_PASSWORD` 覆盖。脚本无法读验证码图片，因此**要求后端以 `CAPTCHA_ENABLED=false` 启动**（与 `scaffold-admin` 的 surefire 同一口径），否则登录第一步就会失败。测试与构建成功不能代替业务页面验收。
+- 本地开发规范见 `AGENTS.md`；前端继续使用 `@yuanda-lowcode-ai/scaffold-ui`，不把组件包源码复制进本仓库；视觉规范见 `DESIGN.md`。
+- 平台生成的 B 档文件会在发布时覆盖；人工业务逻辑写入 `*Extension.java`，页面扩展放入 `src/views/<module>/overrides/`。
+- 平台只写 `.scaffold-project.json` 中的 `generatedBranch`；主干分支由使用方控制。
+- 构建前先执行 `npm run build`，后端执行 `mvn -pl scaffold-admin -am package -DskipTests`。
 
 ## 许可证
 
-本项目代码采用 [MIT License](LICENSE)，允许商用、修改和分发，使用时保留版权及许可证声明。
-
-第三方依赖遵循各自的许可证。GSAP 使用 [Standard "No Charge" License](https://gsap.com/community/standard-license/)，不属于本项目的 MIT 授权范围；使用与再分发时须遵守其条款并保留原有声明。
+本项目代码采用 [MIT License](LICENSE)。第三方依赖遵循各自许可证。
