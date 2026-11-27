@@ -7,6 +7,10 @@ import com.scaffold.business.demo.domain.DemoReconcile20261117Request;
 import com.scaffold.business.demo.domain.DemoReconcile20261117Response;
 import com.scaffold.business.demo.domain.DemoBatchShipRequest;
 import com.scaffold.business.demo.domain.DemoBatchShipResponse;
+import com.scaffold.business.demo.domain.DemoArchiveOrderRequest;
+import com.scaffold.business.demo.domain.DemoArchiveOrderResponse;
+import com.scaffold.business.demo.domain.DemoExportOrdersRequest;
+import com.scaffold.business.demo.domain.DemoExportOrdersResponse;
 import com.scaffold.business.demo.service.DemoService;
 import com.scaffold.common.domain.PageQuery;
 import com.scaffold.common.domain.PageResult;
@@ -24,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import java.util.Map;
 
 /**
  * 测试模型（表 {@code demo}）的接口。
@@ -120,5 +125,26 @@ public class DemoController {
     @OperLog(module = "测试模型", action = "批量发货")
     public R<DemoBatchShipResponse> batchShip(@RequestBody DemoBatchShipRequest request) {
         return R.success(service.batchShip(request));
+    }
+
+    /**
+     * 归档订单（自定义接口 {@code archive_order}，契约 v2）。
+     * 调用项目内已发布 Flow 快照；权限、可信身份、预算与错误由服务端裁决。
+     */
+    @PostMapping("/archive_order")
+    @RequiresPermission("sales:sales_order:archive")
+    @OperLog(module = "测试模型", action = "归档订单")
+    public R<Map<String, Object>> archiveOrder(@RequestBody DemoArchiveOrderRequest request) {
+        return R.success(service.archiveOrder(request));
+    }
+
+    /**
+     * 导出订单（自定义接口 {@code export_orders}，契约 v3）。
+     * 调用项目内已发布 Flow 快照；权限、可信身份、预算与错误由服务端裁决。
+     */
+    @PostMapping("/export_orders")
+    @RequiresPermission("sales:sales_order:export")
+    public R<Map<String, Object>> exportOrders(@RequestBody DemoExportOrdersRequest request) {
+        return R.success(service.exportOrders(request));
     }
 }

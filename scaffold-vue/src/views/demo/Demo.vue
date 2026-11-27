@@ -1,18 +1,29 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
-import { Field, TextInput, type Column } from '@yuanda-lowcode-ai/scaffold-ui/components/ui'
-import { FormDialog, ListPage, PermissionButton } from '@yuanda-lowcode-ai/scaffold-ui/components/business'
+import { ref } from 'vue'
+import { Field, type Column } from '@yuanda-lowcode-ai/scaffold-ui/components/ui'
+import { ListPage, PermissionButton, RowActions } from '@yuanda-lowcode-ai/scaffold-ui/components/business'
 import { useListPage } from '@yuanda-lowcode-ai/scaffold-ui/composables/list'
 import { confirm } from '@yuanda-lowcode-ai/scaffold-ui/composables/confirm'
 import { pushToast, toastError } from '@yuanda-lowcode-ai/scaffold-ui/composables/toast'
-import { required, validate } from '@yuanda-lowcode-ai/scaffold-ui/utils/validate'
-import { demoApi, type DemoRow, type DemoWriteRequest } from '@/api/demo/demo'
+import { demoApi, type DemoRow } from '@/api/demo/demo'
+import DemoDialog from './dialogs/DemoDialog.vue'
+type DialogPage = { openCreate(): void; openEdit(id: number): Promise<boolean>; close(): void }
+const dialogPages: Record<string, DialogPage | null> = {
+  '34': null,
+}
+function setDialogPage(pageId: string, instance: unknown | null) {
+  dialogPages[pageId] = instance as DialogPage | null
+}
+function requireDialogPage(value: unknown): DialogPage {
+  if (typeof value !== 'string' || !dialogPages[value]) throw new Error('引用的弹窗页未生成或不可用：' + String(value))
+  return dialogPages[value]!
+}
 import { onBeforeUnmount, onMounted } from 'vue'
 import { createGeneratedPageRuntime, resolveGeneratedTarget } from '@yuanda-lowcode-ai/scaffold-ui/composables/generated-behavior'
 import type { PageDesignV2 } from '@yuanda-lowcode-ai/scaffold-ui/capabilities'
 
 /* ============================================================
-   Demo。由低代码设计器按模型定义生成，属 B 档：每次发布整文件覆盖。
+   由低代码设计器生成的页面。按模型定义生成，属 B 档：每次发布整文件覆盖。
    版式固定走 ListPage + useListPage（查询 / 重置 / 分页 / 导出 / 行操作都是公共能力），
    页面只声明字段、列与动作。要加区块写到 src/views/demo/overrides/ 里；
    要长期人工接管这一页，就把它改名并让发布不再产出它 —— 现在它每次发布都会被整文件覆盖。
@@ -30,22 +41,20 @@ const list = useListPage<DemoRow, DemoQuery>({
 })
 
 // 页面行为（2.0）：装配共享执行内核；页面动作接列表/提示/确认，方法实例与 operation 由 overrides 注入。
-const behaviorDocument = {"flows":[{"id":"flow:page:page:page-load","name":"page-load","edges":[{"id":"flow:page:page:page-load#edge-mwldwznw-2","port":"next","source":"flow:page:page:page-load#trigger","target":"flow:page:page:page-load#api-mwldwznw-1"},{"id":"flow:page:page:page-load#edge-mwldwznw-3","port":"next","source":"flow:page:page:page-load#api-mwldwznw-1","target":"flow:page:page:page-load#end-mwkmqv5u-1"}],"nodes":[{"id":"flow:page:page:page-load#trigger","type":"trigger","editor":{"x":120,"y":100}},{"id":"flow:page:page:page-load#end-mwkmqv5u-1","type":"end","editor":{"x":120,"y":244}},{"id":"flow:page:page:page-load#api-mwldwznw-1","type":"api","editor":{"x":353,"y":159},"params":{"id":{"source":"variable","variableId":"flow:page:page:page-load#var-mwrs522r-1"}},"operationId":"detail"}],"policy":{"reentry":"ignore"},"variables":[{"id":"flow:page:page:page-load#var-mwrs522r-1","code":"variable1","type":{"type":"string","nullable":false},"label":"变量 1","nullable":false,"defaultValue":""}],"entryNodeId":"flow:page:page:page-load#trigger"}],"variables":[],"propBindings":[],"eventBindings":[{"id":"binding:page:page:page-load","event":"page-load","flowId":"flow:page:page:page-load","source":{"kind":"page"},"enabled":true}]} as unknown as PageDesignV2['behavior']
+const behaviorDocument = {"flows":[{"id":"flow:component:372f7992-553f-439c-a2fc-87eeb006c709:click","name":"click","edges":[{"id":"flow:component:372f7992-553f-439c-a2fc-87eeb006c709:click#edge-mwyx3hhz-2","port":"next","source":"flow:component:372f7992-553f-439c-a2fc-87eeb006c709:click#trigger","target":"flow:component:372f7992-553f-439c-a2fc-87eeb006c709:click#pageAction-mwyx3hhz-1"},{"id":"flow:component:372f7992-553f-439c-a2fc-87eeb006c709:click#edge-mwyx3hhz-3","port":"next","source":"flow:component:372f7992-553f-439c-a2fc-87eeb006c709:click#pageAction-mwyx3hhz-1","target":"flow:component:372f7992-553f-439c-a2fc-87eeb006c709:click#end-mwyaa4sr-5"}],"nodes":[{"id":"flow:component:372f7992-553f-439c-a2fc-87eeb006c709:click#trigger","type":"trigger","editor":{"x":164,"y":65}},{"id":"flow:component:372f7992-553f-439c-a2fc-87eeb006c709:click#end-mwyaa4sr-5","type":"end","editor":{"x":164,"y":389.3602166154087}},{"id":"flow:component:372f7992-553f-439c-a2fc-87eeb006c709:click#pageAction-mwyx3hhz-1","type":"pageAction","action":"openPage","editor":{"x":164,"y":209},"params":{"page":{"source":"literal","value":"34"}}}],"policy":{"reentry":"ignore"},"variables":[],"entryNodeId":"flow:component:372f7992-553f-439c-a2fc-87eeb006c709:click#trigger"},{"id":"flow:component:5d710e3a-4e77-4791-8f78-2e42d8fc15dd:click","name":"click","edges":[{"id":"flow:component:5d710e3a-4e77-4791-8f78-2e42d8fc15dd:click#edge-mwyx2tbd-2","port":"next","source":"flow:component:5d710e3a-4e77-4791-8f78-2e42d8fc15dd:click#trigger","target":"flow:component:5d710e3a-4e77-4791-8f78-2e42d8fc15dd:click#pageAction-mwyx2tbc-1"},{"id":"flow:component:5d710e3a-4e77-4791-8f78-2e42d8fc15dd:click#edge-mwyx33hf-4","port":"next","source":"flow:component:5d710e3a-4e77-4791-8f78-2e42d8fc15dd:click#pageAction-mwyx2tbc-1","target":"flow:component:5d710e3a-4e77-4791-8f78-2e42d8fc15dd:click#end-mwyx33hf-3"}],"nodes":[{"id":"flow:component:5d710e3a-4e77-4791-8f78-2e42d8fc15dd:click#trigger","type":"trigger","editor":{"x":120,"y":100}},{"id":"flow:component:5d710e3a-4e77-4791-8f78-2e42d8fc15dd:click#pageAction-mwyx2tbc-1","type":"pageAction","action":"openPage","editor":{"x":120,"y":244},"params":{"page":{"source":"literal","value":"34"}}},{"id":"flow:component:5d710e3a-4e77-4791-8f78-2e42d8fc15dd:click#end-mwyx33hf-3","type":"end","editor":{"x":120,"y":388}}],"policy":{"reentry":"ignore"},"variables":[],"entryNodeId":"flow:component:5d710e3a-4e77-4791-8f78-2e42d8fc15dd:click#trigger"}],"variables":[],"propBindings":[],"eventBindings":[{"id":"binding:component:372f7992-553f-439c-a2fc-87eeb006c709:click","event":"click","flowId":"flow:component:372f7992-553f-439c-a2fc-87eeb006c709:click","source":{"kind":"component","nodeId":"372f7992-553f-439c-a2fc-87eeb006c709"},"enabled":true},{"id":"binding:component:5d710e3a-4e77-4791-8f78-2e42d8fc15dd:click","event":"click","flowId":"flow:component:5d710e3a-4e77-4791-8f78-2e42d8fc15dd:click","source":{"kind":"component","nodeId":"5d710e3a-4e77-4791-8f78-2e42d8fc15dd"},"enabled":true}]} as unknown as PageDesignV2['behavior']
 // 页面级能力与组件实例分开：表格刷新/查询是列表代理，不伪装成物料实例。
 const behaviorTargets: Record<string, unknown> = {
-  '39508b98-dd03-4348-b2a9-632b9be9a18c': { refresh: () => list.load(), search: () => list.search() },
+  '549e6471-c0a0-4eb1-9649-bcc05b7c9ef8': { refresh: () => list.load(), search: () => list.search() },
 }
 const behaviorComponentTypes: Record<string, string> = {
-  'dd1f08ee-9967-4197-b51c-d5e23d412b09': 'SearchForm',
-  '39508b98-dd03-4348-b2a9-632b9be9a18c': 'DataTable',
-  'f23373ff-f73a-4d1e-b942-33b07c044508': 'Toolbar',
-  'ae256b5b-24d5-41f4-a61d-0f6e74a774a7': 'Button',
-  '3d5c2b90-2447-4427-afd6-dc8ff2548e91': 'Button',
-  '79732a73-b257-4457-838f-829a5bd7754e': 'RowActions',
-  '516b3277-a7b7-4436-b5aa-ea89e38a81bd': 'Button',
-  '38d4e50d-85e3-471d-93de-d4e71b5b25c8': 'Button',
-  '8bb2a809-2d06-4cbf-acf2-f9b75d9d0e24': 'FormContainer',
-  'e9bb666b-5a45-4cb7-85c9-daaa3e1c35da': 'TextInput',
+  'd14d93a4-773f-4f19-88d1-5cb38d4d3552': 'SearchForm',
+  'af31a406-8a12-42e1-8e10-5f422a8fa398': 'Toolbar',
+  '5d710e3a-4e77-4791-8f78-2e42d8fc15dd': 'Button',
+  '0494f595-b0fb-4105-accc-c29ddf5326c9': 'Button',
+  '549e6471-c0a0-4eb1-9649-bcc05b7c9ef8': 'DataTable',
+  '3f89af6a-2b08-4e28-a2ef-55b0ca7391b2': 'RowActions',
+  '372f7992-553f-439c-a2fc-87eeb006c709': 'Button',
+  '63d05275-124a-4e59-af7f-6c1151037bcf': 'Button',
 }
 const pageBehavior = createGeneratedPageRuntime({
   document: { version: '2.0', pageType: 'list', modelRef: 'generated', layout: { id: 'generated', type: 'GeneratedPage' }, behavior: behaviorDocument } as unknown as PageDesignV2,
@@ -53,15 +62,47 @@ const pageBehavior = createGeneratedPageRuntime({
     componentOfNode: (nodeId: string) => behaviorComponentTypes[nodeId],
     resolveTarget: (nodeId, scope) => resolveGeneratedTarget(pageBehavior.targets, nodeId, scope, behaviorTargets),
     runPageAction: async (action: string, args: Record<string, unknown>) => {
+      if (action === 'openPage') {
+        const page = requireDialogPage(args.page)
+        if (args.id === undefined || args.id === null) { page.openCreate(); return true }
+        const opened = await page.openEdit(requireActionId(args.id))
+        if (!opened) throw new Error('编辑测试模型未成功')
+        return opened
+      }
+      if (action === 'create') {
+        const target = args.dialog ?? args.nodeId
+        if (typeof target === 'string' && target in dialogPages) { requireDialogPage(target).openCreate(); return true }
+        throw new Error('页面动作 create 未配置可用的新增弹窗')
+      }
+      if (action === 'edit') {
+        const target = args.dialog ?? args.nodeId
+        if (typeof target === 'string' && target in dialogPages) {
+          const opened = await requireDialogPage(target).openEdit(requireActionId(args.id))
+          if (!opened) throw new Error('编辑测试模型未成功')
+          return opened
+        }
+        throw new Error('页面动作 edit 未配置可用的编辑弹窗')
+      }
+      if (action === 'delete') {
+        const removed = await remove({ id: requireActionId(args.id) }, args.confirm !== false)
+        if (!removed) throw new Error('删除测试模型未成功')
+        return removed
+      }
+      if (action === 'state.set') {
+        throw new Error('页面状态「' + String(args.key) + '」未由本页适配')
+        return undefined
+      }
       if (action === 'refresh') { await list.load(); return undefined }
-      if (action === 'toast') { pushToast(String(args.message ?? '')); return undefined }
+      if (action === 'toast') { pushToast(String(args.message ?? ''), args.tone === 'danger' ? 'danger' : args.tone === 'ok' ? 'ok' : 'info'); return undefined }
       if (action === 'confirm.ask') { return await confirm({ title: String(args.title ?? '确认'), message: String(args.message ?? ''), danger: Boolean(args.danger) }) }
       // 未适配动作必须失败可见，不能以 undefined 伪装执行成功。
       throw new Error('页面动作「' + action + '」尚未由生成页宿主适配')
     },
     invokeOperation: async (operationId: string, params: Record<string, unknown>, context: { nodeId: string; signal: AbortSignal }) => {
-      // 约定：operation 末段是 CRUD 动作（list/detail/create/update/remove/export），复用页面自有 api 模块
+      context.signal.throwIfAborted()
+      // 约定：operation 末段是 CRUD 动作或同模型自定义接口编码
       const method = operationId.split('.').pop() ?? ''
+      if (!method) throw new Error('operation「' + operationId + '」缺少接口编码')
       const requireOperationId = (operationId: string, params: Record<string, unknown>) => {
         const id = params.id
         if (id === undefined || id === null || id === '') throw new Error('operation「' + operationId + '」缺少 params.id')
@@ -73,10 +114,23 @@ const pageBehavior = createGeneratedPageRuntime({
       if (method === 'update') return await demoApi.update(requireOperationId(operationId, params), params as never, context.signal)
       if (method === 'detail') return await demoApi.detail(requireOperationId(operationId, params), context.signal)
       if (method === 'remove') return await demoApi.remove(requireOperationId(operationId, params), context.signal)
-      throw new Error('operation「' + operationId + '」不在本页 api 模块的 CRUD 动作内，请在 overrides 中注入')
+      return await demoApi.invoke(method, params, context.signal)
     },
   },
 })
+async function dispatchPageEvent(nodeId: string, event: string, scope: { row?: DemoRow } = {}) {
+  const result = await pageBehavior.runtime.dispatch({ kind: 'component', nodeId }, event, scope as never)
+  return result
+}
+async function runDefaultThenFlow(defaultClick: () => unknown, nodeId: string, event: string, scope: { row?: DemoRow } = {}) {
+  if (await defaultClick() === false) return
+  await dispatchPageEvent(nodeId, event, scope)
+}
+function requireActionId(value: unknown): number {
+  if (typeof value === 'string' && /^[0-9]+$/.test(value)) value = Number(value)
+  if (typeof value !== 'number' || !Number.isSafeInteger(value) || value <= 0) throw new Error('页面动作缺少有效主键 id')
+  return value
+}
 // Vue ref 回调把真实组件实例注册到共享运行时；null/卸载时立即注销。
 const behaviorTargetDisposers = new Map<string, () => void>()
 const behaviorTargetRef = (nodeId: string, key?: string | number) => (instance: unknown | null) => {
@@ -104,112 +158,48 @@ const columns: Column[] = [
   { key: 'actions', title: '操作', width: 112, className: 'col-actions' },
 ]
 
-/* ── 新增 / 编辑 ── */
-type DemoForm = {
-  name: string | null
-}
-
-/** 正在编辑哪一行的主键；空着就是新增。不借表单里某个字段的值来猜：主键可能由人填（业务编号），也可能根本不进表单（自增） */
-const editing = ref<number | null>(null)
-const dialog = ref(false)
-const saving = ref(false)
-const form = reactive<DemoForm>({
-  name: '',
-})
-const errors = ref<Record<string, string>>({})
-
-function emptyForm(): DemoForm {
-  return {
-    name: '',
+async function remove(row: Pick<DemoRow, 'id'>, ask = true) {
+  if (ask) {
+    const ok = await confirm({
+      title: '删除测试模型',
+      message: '删除后无法恢复。确认删除这条测试模型吗？',
+      confirmText: '删除',
+      danger: true,
+    })
+    if (!ok) return false
   }
-}
-
-function openCreate() {
-  editing.value = null
-  Object.assign(form, emptyForm())
-  errors.value = {}
-  dialog.value = true
-}
-
-/**
- * 编辑前先取整行：列表行只带勾选进列表的字段，直接拿 row 填表单，
- * 保存时会把没显示出来的字段当空值覆盖掉。
- */
-async function openEdit(row: DemoRow) {
-  try {
-    const detail = await demoApi.detail(row.id)
-    editing.value = row.id
-    Object.assign(form, emptyForm(), detail)
-    errors.value = {}
-    dialog.value = true
-  } catch (error) {
-    toastError(error, '测试模型加载失败')
-  }
-}
-
-async function submit() {
-  errors.value = validate(form, {
-  })
-  if (Object.keys(errors.value).length) return
-  const payload: DemoWriteRequest = {
-    name: form.name?.trim() ?? null,
-  }
-  saving.value = true
-  try {
-    if (editing.value !== null) await demoApi.update(editing.value, payload)
-    else await demoApi.create(payload)
-    pushToast(editing.value !== null ? '测试模型已更新' : '测试模型已创建')
-    dialog.value = false
-    await list.load()
-  } catch (error) {
-    toastError(error, '测试模型保存失败')
-  } finally {
-    saving.value = false
-  }
-}
-
-async function remove(row: DemoRow) {
-  const ok = await confirm({
-    title: '删除测试模型',
-    message: '删除后平台不会自动回滚已发布到仓库的代码。确认删除这条测试模型吗？',
-    confirmText: '删除',
-    danger: true,
-  })
-  if (!ok) return
   try {
     await demoApi.remove(row.id)
     pushToast('测试模型已删除')
     await list.load()
+    return true
   } catch (error) {
     toastError(error, '测试模型删除失败')
+    return false
   }
 }
 </script>
 
 <template>
   <ListPage
-    title="Demo"
+    title="测试模型列表页"
     desc="本页由低代码设计器按模型定义生成；要改字段回到设计器改模型再发布。"
     table-title="测试模型列表"
     :list="list"
     :columns="columns"
   >
     <template #actions>
-      <PermissionButton perm="demo:demo:add" variant="primary" icon="plus" @click="openCreate">新增</PermissionButton>
+      <PermissionButton perm="demo:demo:add" variant="primary" icon="plus" @click="dispatchPageEvent('5d710e3a-4e77-4791-8f78-2e42d8fc15dd', 'click')">新增</PermissionButton>
     </template>
     <template #cell-createTime="{ row }"><span class="tnum soft">{{ row.createTime ?? '—' }}</span></template>
 
     <template #cell-actions="{ row }">
-      <div class="row-actions">
-        <PermissionButton perm="demo:demo:edit" icon-only icon="edit" label="编辑" :ref="behaviorTargetRef('516b3277-a7b7-4436-b5aa-ea89e38a81bd', row.id)" @click="openEdit(row)" />
-        <PermissionButton perm="demo:demo:remove" icon-only icon="trash" label="删除" danger :ref="behaviorTargetRef('38d4e50d-85e3-471d-93de-d4e71b5b25c8', row.id)" @click="remove(row)" />
-      </div>
+      <RowActions label="更多">
+        <PermissionButton perm="demo:demo:edit" icon-only icon="edit" label="编辑" :ref="behaviorTargetRef('372f7992-553f-439c-a2fc-87eeb006c709', row.id)" @click="dispatchPageEvent('372f7992-553f-439c-a2fc-87eeb006c709', 'click', { row })" />
+        <PermissionButton perm="demo:demo:remove" icon-only icon="trash" label="删除" danger :ref="behaviorTargetRef('63d05275-124a-4e59-af7f-6c1151037bcf', row.id)" @click="remove(row)" />
+      </RowActions>
     </template>
   </ListPage>
 
-  <FormDialog :open="dialog" :title="editing !== null ? '编辑测试模型' : '新增测试模型'" :saving="saving" @close="dialog = false" @submit="submit">
-    <Field label="名称" wide data-field-node-id="e9bb666b-5a45-4cb7-85c9-daaa3e1c35da" :error="errors.name">
-      <TextInput v-model="form.name" />
-    </Field>
-  </FormDialog>
+  <DemoDialog :ref="instance => setDialogPage('34', instance)" @saved="list.load()" />
 </template>

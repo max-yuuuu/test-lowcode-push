@@ -40,4 +40,6 @@ export const demoApi = {
   remove: (id: number, signal?: AbortSignal) => httpClient.delete<void>(`/demo/demo/${id}`, signal),
   /** 后端生成 CSV，条件与列表同一套 */
   export: (query?: QueryParams, signal?: AbortSignal) => httpClient.download('/demo/demo/export', query, signal),
+  /** 同模型自定义接口：路径与后端 Controller 一致，权限与错误由服务端裁决 */
+  invoke: (operationCode: string, body: Record<string, unknown>, signal?: AbortSignal) => httpClient.post<unknown>(`/demo/demo/${operationCode}`, body, signal),
 }
