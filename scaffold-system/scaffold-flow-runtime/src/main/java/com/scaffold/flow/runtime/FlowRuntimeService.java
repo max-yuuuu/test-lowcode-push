@@ -1,5 +1,6 @@
 package com.scaffold.flow.runtime;
 
+import com.scaffold.framework.flow.FlowExecutionContext;
 import org.springframework.stereotype.Service;
 import org.slf4j.MDC;
 
@@ -9,27 +10,19 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 
-/**
- * The first bounded runtime for published Flow snapshots.
- *
- * <p>Control nodes execute here; query/write/operation nodes require host-injected adapters.
- * A published document never executes arbitrary user code merely because its kind is
- * present in the design-time registry.
- */
+/** Executes published Flow snapshots through server-owned adapters with shared execution bounds. */
 @Service
 public class FlowRuntimeService {
-    static final int MAX_EXECUTED_NODES = 64;
-
     public ExecutionResult execute(Map<String, Object> document, Map<String, Object> input) {
         return execute(document, input,
-                (node, current) -> { throw failure("FLOW_NODE_UNSUPPORTED", "Flow 数据节点未配置服务端适配器"); },
-                (node, current) -> { throw failure("FLOW_NODE_UNSUPPORTED", "Flow operation 节点未配置服务端适配器"); },
+                (FlowRuntimeService.DataInvoker) (node, current) -> { throw failure("FLOW_NODE_UNSUPPORTED", "Flow 数据节点未配置服务端适配器"); },
+                (FlowRuntimeService.OperationInvoker) (node, current) -> { throw failure("FLOW_NODE_UNSUPPORTED", "Flow operation 节点未配置服务端适配器"); },
                 ExecutionOptions.none());
     }
 
     public ExecutionResult execute(Map<String, Object> document, Map<String, Object> input, OperationInvoker operationInvoker) {
         return execute(document, input,
-                (node, current) -> { throw failure("FLOW_NODE_UNSUPPORTED", "Flow 数据节点未配置服务端适配器"); },
+                (FlowRuntimeService.DataInvoker) (node, current) -> { throw failure("FLOW_NODE_UNSUPPORTED", "Flow 数据节点未配置服务端适配器"); },
                 operationInvoker, ExecutionOptions.none());
     }
 
@@ -42,17 +35,19 @@ public class FlowRuntimeService {
                                    DataInvoker dataInvoker, OperationInvoker operationInvoker,
                                    ExecutionOptions options) {
         if (input == null || dataInvoker == null || operationInvoker == null || options == null) throw failure("FLOW_INPUT_INVALID", "Flow 输入无效");
+        options.budget().checkPayload(input);
         FlowDocumentValidator.validate(document);
         Map<String, Map<String, Object>> nodes = index(document);
         String current = (String) document.get("start");
         Map<String, Object> output = new LinkedHashMap<>(input);
+        String executionTraceId = options.context() != null && options.context().traceId() != null
+                && !options.context().traceId().isBlank() ? options.context().traceId() : traceId();
         var definitions = FlowVariables.definitions(document);
         Map<String, Object> variables = new LinkedHashMap<>();
         definitions.forEach((id, definition) -> variables.put(id, definition.get("defaultValue")));
         List<String> path = new ArrayList<>();
-        for (int count = 0; current != null; count++) {
-            if (count >= MAX_EXECUTED_NODES) throw failure("FLOW_BUDGET_EXCEEDED", "Flow 执行节点数超过上限");
-            if (options.cancelled()) return new ExecutionResult("cancelled", output, List.copyOf(path), traceId());
+        for (; current != null; ) {
+            if (options.cancelled()) return new ExecutionResult("cancelled", output, List.copyOf(path), executionTraceId);
             if (options.expired()) throw failure("FLOW_DEADLINE_EXCEEDED", "Flow 执行超时");
             Map<String, Object> node = nodes.get(current);
             if (node == null) throw failure("FLOW_DOCUMENT_INVALID", "Flow 节点不存在");
@@ -60,6 +55,7 @@ public class FlowRuntimeService {
             String branch = null;
             path.add(current);
             try {
+                options.budget().addExecutedNode();
                 if (Set.of("input", "validate", "map", "audit", "end").contains(kind)) {
                     if ("map".equals(kind) && node.get("assignments") instanceof List<?> assignments) {
                         for (Object raw : assignments) {
@@ -74,10 +70,15 @@ public class FlowRuntimeService {
                         output = FlowVariables.bind(bindings, variables, input, output);
                     }
                 } else if ("operation".equals(kind)) {
-                    output = new LinkedHashMap<>(operationInvoker.invoke(node, node.get("valueBindings") instanceof Map<?, ?> bindings
-                            ? FlowVariables.bind(bindings, variables, input, output) : bindInput(node, output)));
+                    output = new LinkedHashMap<>(operationInvoker.invoke(options.context(), node,
+                            node.get("valueBindings") instanceof Map<?, ?> bindings
+                                    ? FlowVariables.bind(bindings, variables, input, output) : bindInput(node, output)));
                 } else if ("query".equals(kind) || "write".equals(kind)) {
-                    output = new LinkedHashMap<>(dataInvoker.invoke(node, output));
+                    output = new LinkedHashMap<>(dataInvoker.invoke(options.context(), node, output));
+                    if ("query".equals(kind) && output.get("rows") instanceof List<?> rows) {
+                        options.budget().addReadRows(rows.size());
+                    }
+                    if ("write".equals(kind)) options.budget().addWriteRows(affectedRows(output));
                 } else if ("condition".equals(kind)) {
                     branch = conditionTarget(node, variables, input, output, path);
                 } else if ("error".equals(kind)) {
@@ -86,9 +87,12 @@ public class FlowRuntimeService {
                 } else {
                     throw failure("FLOW_NODE_UNSUPPORTED", "Flow 节点暂不支持执行：" + kind);
                 }
+                options.budget().checkPayload(output);
             } catch (FlowRuntimeException error) {
-                if (!error.nodePath().isEmpty()) throw error;
-                throw new FlowRuntimeException(error.code(), error.getMessage(), List.copyOf(path), error.business());
+                if (error.nodePath().isEmpty()) {
+                    throw new FlowRuntimeException(error.code(), error.getMessage(), List.copyOf(path), error.business());
+                }
+                throw error;
             } catch (RuntimeException error) {
                 // Adapter implementations may contain SQL, credentials, payloads or stack details.
                 // Convert only unexpected failures at this boundary;宿主声明的受控失败（PropagatedError）
@@ -97,10 +101,19 @@ public class FlowRuntimeService {
                 throw new FlowRuntimeException("FLOW_NODE_FAILED", "Flow 节点执行失败", List.copyOf(path));
             }
             current = branch != null ? branch : (String) node.get("next");
-            if (options.cancelled()) return new ExecutionResult("cancelled", output, List.copyOf(path), traceId());
+            if (options.cancelled()) return new ExecutionResult("cancelled", output, List.copyOf(path), executionTraceId);
             if (options.expired()) throw failure("FLOW_DEADLINE_EXCEEDED", "Flow 执行超时");
         }
-        return new ExecutionResult("success", output, List.copyOf(path), traceId());
+        options.budget().checkPayload(output);
+        return new ExecutionResult("success", output, List.copyOf(path), executionTraceId);
+    }
+
+    private static long affectedRows(Map<String, Object> output) {
+        Object value = output.get("affected");
+        if (!(value instanceof Number number) || number.longValue() < 0 || number.longValue() != number.doubleValue()) {
+            throw new FlowRuntimeException("FLOW_NODE_INVALID", "Flow 写入节点必须返回非负 affected 条数");
+        }
+        return number.longValue();
     }
 
     /**
@@ -175,9 +188,14 @@ public class FlowRuntimeService {
         return new FlowRuntimeException(code, message);
     }
 
-    public record ExecutionOptions(CancellationToken cancellation, Instant deadline) {
+    public record ExecutionOptions(CancellationToken cancellation, Instant deadline,
+                                   FlowExecutionContext context, FlowExecutionBudget budget) {
+        public ExecutionOptions(CancellationToken cancellation, Instant deadline) {
+            this(cancellation, deadline, null, new FlowExecutionBudget());
+        }
         public ExecutionOptions {
             cancellation = cancellation == null ? () -> false : cancellation;
+            budget = budget == null ? new FlowExecutionBudget() : budget;
         }
         public static ExecutionOptions none() { return new ExecutionOptions(() -> false, null); }
         public static ExecutionOptions forCurrentThread() {
@@ -187,6 +205,16 @@ public class FlowRuntimeService {
         public static ExecutionOptions withTimeout(Duration timeout) {
             if (timeout == null || timeout.isNegative() || timeout.isZero()) return none();
             return new ExecutionOptions(() -> false, Instant.now(Clock.systemUTC()).plus(timeout));
+        }
+        public static ExecutionOptions forContext(FlowExecutionContext context) {
+            return forContext(context, new FlowExecutionBudget());
+        }
+        public static ExecutionOptions forContext(FlowExecutionContext context, FlowExecutionBudget budget) {
+            if (context == null) return new ExecutionOptions(Thread.currentThread()::isInterrupted, null, null, budget);
+            return new ExecutionOptions(Thread.currentThread()::isInterrupted, context.deadline(), context, budget);
+        }
+        public ExecutionOptions withContext(FlowExecutionContext context) {
+            return new ExecutionOptions(cancellation, deadline, context, budget);
         }
         public boolean cancelled() { return cancellation.cancelled(); }
         public boolean expired() { return deadline != null && !Instant.now(Clock.systemUTC()).isBefore(deadline); }
@@ -200,11 +228,45 @@ public class FlowRuntimeService {
     @FunctionalInterface
     public interface DataInvoker {
         Map<String, Object> invoke(Map<String, Object> node, Map<String, Object> input);
+
+        default Map<String, Object> invoke(FlowExecutionContext context, Map<String, Object> node,
+                                           Map<String, Object> input) {
+            return invoke(node, input);
+        }
+    }
+
+    @FunctionalInterface
+    public interface ContextDataInvoker extends DataInvoker {
+        @Override
+        Map<String, Object> invoke(FlowExecutionContext context, Map<String, Object> node,
+                                   Map<String, Object> input);
+
+        @Override
+        default Map<String, Object> invoke(Map<String, Object> node, Map<String, Object> input) {
+            throw new UnsupportedOperationException("Context data invoker requires trusted context");
+        }
+    }
+
+    @FunctionalInterface
+    public interface ContextOperationInvoker extends OperationInvoker {
+        @Override
+        Map<String, Object> invoke(FlowExecutionContext context, Map<String, Object> node,
+                                   Map<String, Object> input);
+
+        @Override
+        default Map<String, Object> invoke(Map<String, Object> node, Map<String, Object> input) {
+            throw new UnsupportedOperationException("Context operation invoker requires trusted context");
+        }
     }
 
     @FunctionalInterface
     public interface OperationInvoker {
         Map<String, Object> invoke(Map<String, Object> node, Map<String, Object> input);
+
+        default Map<String, Object> invoke(FlowExecutionContext context, Map<String, Object> node,
+                                           Map<String, Object> input) {
+            return invoke(node, input);
+        }
     }
 
     public record ExecutionResult(String status, Map<String, Object> output,

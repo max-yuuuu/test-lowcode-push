@@ -15,8 +15,8 @@ export interface BeianItem {
 // 可变而非 Object.freeze：装配处要在挂载前 setBrand 覆盖 name/shortName。
 // 平台品牌不在这里 —— 它是薄宿主的申报，底座保持中性，交付时按项目名改写。
 export const APP = {
-  name: 'T11 真实链路',
-  shortName: 'T11 真实链路',
+  name: '订单中台',
+  shortName: '订单中台',
   subtitle: 'Admin Console',
   version: 'v1.0.0',
   /** 登录页左侧介绍位：接入具体业务平台时改这一段 */

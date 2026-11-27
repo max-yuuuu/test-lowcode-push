@@ -1,13 +1,12 @@
 {
-  "name": "scaffold-vue",
+  "name": "order-service-web",
   "version": "1.0.0",
   "private": true,
-  "description": "通用后台管理脚手架前端宿主 app（Vue 3 + Vite + TS）：外壳、路由、登录与业务页面，物料依赖 @yuanda-lowcode-ai/scaffold-ui",
+  "description": "Web application for order-service.",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "test:api": "node --test --experimental-strip-types src/api/__tests__/*.test.ts",
-    "test:unit": "node --test --experimental-strip-types src/api/__tests__/*.test.ts src/shell/__tests__/*.test.ts src/data/__tests__/*.test.ts",
+
     "typecheck": "vue-tsc --noEmit",
     "bundle": "vite build",
     "build": "npm run typecheck && npm run bundle",

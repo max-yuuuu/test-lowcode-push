@@ -2,6 +2,7 @@ package com.scaffold.framework.handler;
 
 import com.scaffold.common.domain.R;
 import com.scaffold.common.exception.BusinessException;
+import com.scaffold.framework.flow.CrudFlowException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -15,6 +16,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import java.util.Map;
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -23,6 +26,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<R<Void>> handleBusinessException(BusinessException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(R.error(ex.code(), ex.getMessage()));
+    }
+
+    @ExceptionHandler(CrudFlowException.class)
+    public ResponseEntity<R<Map<String, Object>>> handleCrudFlow(CrudFlowException ex) {
+        Map<String, Object> data = Map.of(
+                "status", ex.status(),
+                "errorCode", ex.errorCode(),
+                "committed", ex.committed());
+        return ResponseEntity.status(ex.httpStatus())
+                .body(new R<>(ex.httpStatus(), ex.getMessage(), data, org.slf4j.MDC.get("traceId")));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
