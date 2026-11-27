@@ -1,9 +1,10 @@
 package com.scaffold.flow.runtime;
 
+import com.scaffold.framework.datascope.DataScopeCriteria;
+import com.scaffold.framework.flow.FlowExecutionContext;
 import com.scaffold.framework.security.SecurityUtils;
 import org.springframework.jdbc.core.JdbcOperations;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -16,10 +17,6 @@ import java.util.Map;
 public class JdbcFlowDataAdapter implements FlowDataAdapter {
     private static final int MAX_LIMIT = 100;
     private static final String IDENTIFIER = "[A-Za-z_][A-Za-z0-9_]*";
-    public static final List<String> SERVER_CONTROLLED_FIELDS =
-            List.of("id", "tenantId", "createBy", "updateBy", "createTime", "updateTime", "deleted");
-    private static final List<String> SERVER_CONTROLLED_COLUMNS =
-            List.of("id", "tenant_id", "create_by", "update_by", "create_time", "update_time", "deleted");
 
     private final JdbcOperations jdbc;
     private final ModelMetadataProvider metadata;
@@ -32,45 +29,69 @@ public class JdbcFlowDataAdapter implements FlowDataAdapter {
     @Override
     public Map<String, Object> invoke(Map<String, Object> context, Map<String, Object> node,
                                       Map<String, Object> input) {
+        return invoke(null, context, node, input, null);
+    }
+
+    @Override
+    public Map<String, Object> invoke(FlowExecutionContext trusted, Map<String, Object> node,
+                                      Map<String, Object> input) {
+        return invoke(trusted, Map.of("projectId", trusted.projectId()), node, input,
+                trusted.subject() == null ? null : trusted.subject().username());
+    }
+
+    private Map<String, Object> invoke(FlowExecutionContext trusted, Map<String, Object> context,
+                                       Map<String, Object> node, Map<String, Object> input,
+                                       String trustedOperator) {
         long operationProjectId = positiveLong(context.get("projectId"), "Flow projectId 无效");
+        if (trusted != null && (trusted.projectId() != operationProjectId
+                || trusted.subject() == null || trusted.subject().tenantId() == null
+                || trusted.subject().tenantId() != trusted.tenantId()
+                || trusted.operationPermission() == null
+                || !trusted.operationPermission().isBlank()
+                    && !trusted.permissions().contains(trusted.operationPermission()))) {
+            throw failure("FLOW_CONTEXT_FORBIDDEN", "Flow 可信执行上下文不一致");
+        }
         long modelId = positiveLong(node.get("modelId"), "Flow modelId 无效");
         Map<String, Object> model = metadata.selectRuntimeModel(modelId);
         if (model == null || !sameId(model.get("projectId"), operationProjectId)
                 || !sameId(model.get("status"), 1) || truthy(model.get("deleted"))) {
             throw failure("FLOW_MODEL_FORBIDDEN", "Flow 数据节点模型不可访问");
         }
-        if (truthy(model.get("enableDataScope"))) {
-            throw failure("FLOW_DATA_SCOPE_UNSUPPORTED", "启用数据权限的模型暂不支持 Flow 数据节点");
-        }
         String table = identifier(model.get("tableName"), "模型物理表名无效");
         SqlIdentifiers.requireTableName(table);
         Map<String, Map<String, Object>> metadata = fieldMetadata(modelId);
+        RowScope rowScope = truthy(model.get("enableDataScope"))
+                ? rowScope(trusted, metadata) : RowScope.disabled();
         String kind = String.valueOf(node.get("kind"));
         return switch (kind) {
-            case "query" -> query(model, table, metadata, tenantId(context, model, metadata), node, input);
-            case "write" -> write(context, model, table, metadata, node, input);
+            case "query" -> query(model, table, metadata, rowScope, node, input);
+            case "write" -> write(model, table, metadata, rowScope, node, input, trustedOperator);
             default -> throw failure("FLOW_NODE_UNSUPPORTED", "Flow 数据节点类型不支持：" + kind);
         };
     }
 
-    private long tenantId(Map<String, Object> context, Map<String, Object> model,
-                          Map<String, Map<String, Object>> metadata) {
-        boolean scoped = truthy(model.get("tenantScoped")) || metadata.values().stream()
-                .anyMatch(field -> "tenant_id".equalsIgnoreCase(String.valueOf(field.get("columnName"))));
-        if (!scoped) return 0L;
-        Object value = context.get("tenantId");
-        if (!(value instanceof Number number) || number.longValue() <= 0 || number.longValue() != number.doubleValue()) {
-            throw failure("FLOW_TENANT_FORBIDDEN", "Flow 数据节点缺少可信租户上下文");
+    private RowScope rowScope(FlowExecutionContext trusted, Map<String, Map<String, Object>> metadata) {
+        if (trusted == null || trusted.dataScope() == null) {
+            throw failure("FLOW_CONTEXT_FORBIDDEN", "数据权限模型需要可信执行上下文");
         }
-        if (metadata.values().stream().noneMatch(field -> "tenant_id".equalsIgnoreCase(String.valueOf(field.get("columnName"))))) {
-            metadata.put("tenantId", Map.of("fieldCode", "tenantId", "columnName", "tenant_id",
-                    "isPrimary", false, "isAutoIncrement", false, "isInsert", true, "isEdit", true));
+        DataScopeCriteria scope = trusted.dataScope();
+        if (!scope.isAllScope() && !scope.getDeptIds().isEmpty()) {
+            throw failure("FLOW_DATA_SCOPE_UNSUPPORTED", "部门数据范围尚无 Flow 运行时列契约");
         }
-        return number.longValue();
+        if (!scope.isAllScope() && (scope.getUserId() == null
+                || trusted.subject() == null || !scope.getUserId().equals(trusted.subject().userId()))) {
+            throw failure("FLOW_CONTEXT_FORBIDDEN", "Flow 数据范围与可信用户不一致");
+        }
+        Map<String, Object> owner = metadata.get("createBy");
+        if (owner == null || !"create_by".equalsIgnoreCase(String.valueOf(owner.get("columnName")))) {
+            throw failure("FLOW_MODEL_INVALID", "数据权限模型缺少 create_by 所有者字段");
+        }
+        return new RowScope(true, !scope.isAllScope(), String.valueOf(owner.get("fieldCode")),
+                column(owner, "createBy"), trusted.subject().username());
     }
 
     private Map<String, Object> query(Map<String, Object> model, String table,
-                                      Map<String, Map<String, Object>> metadata, long tenantId,
+                                      Map<String, Map<String, Object>> metadata, RowScope rowScope,
                                       Map<String, Object> node, Map<String, Object> input) {
         List<?> rawFields = list(node.get("fields"));
         List<String> select = new ArrayList<>();
@@ -84,15 +105,15 @@ public class JdbcFlowDataAdapter implements FlowDataAdapter {
         StringBuilder sql = new StringBuilder("SELECT ").append(String.join(", ", select))
                 .append(" FROM ").append(table).append(" WHERE 1 = 1");
         if (truthy(model.get("enableLogicDelete"))) sql.append(" AND deleted = 0");
-        if (tenantId > 0) {
-            sql.append(" AND tenant_id = ?");
-            args.add(tenantId);
-        }
         for (Map.Entry<?, ?> entry : filters.entrySet()) {
             String code = identifier(entry.getKey(), "查询过滤字段无效");
             Map<String, Object> field = requiredField(metadata, code);
             sql.append(" AND ").append(column(field, code)).append(" = ?");
             args.add(resolveValue(entry.getValue(), input));
+        }
+        if (rowScope.selfOnly()) {
+            sql.append(" AND ").append(rowScope.ownerColumn()).append(" = ?");
+            args.add(rowScope.owner());
         }
         int limit = integer(node.getOrDefault("limit", 20), "查询 limit 无效");
         if (limit < 1 || limit > MAX_LIMIT) throw failure("FLOW_LIMIT_INVALID", "Flow 查询 limit 超出上限");
@@ -102,9 +123,10 @@ public class JdbcFlowDataAdapter implements FlowDataAdapter {
         return Map.of("rows", rows, "count", rows.size());
     }
 
-    private Map<String, Object> write(Map<String, Object> context, Map<String, Object> model, String table,
-                                      Map<String, Map<String, Object>> metadata,
-                                      Map<String, Object> node, Map<String, Object> input) {
+    private Map<String, Object> write(Map<String, Object> model, String table,
+                                      Map<String, Map<String, Object>> metadata, RowScope rowScope,
+                                      Map<String, Object> node, Map<String, Object> input,
+                                      String trustedOperator) {
         String mode = String.valueOf(node.get("mode"));
         if (!"insert".equals(mode) && !"update".equals(mode)) {
             throw failure("FLOW_WRITE_INVALID", "Flow 写入模式不支持：" + mode);
@@ -115,53 +137,33 @@ public class JdbcFlowDataAdapter implements FlowDataAdapter {
             String code = identifier(entry.getKey(), "写入字段无效");
             Map<String, Object> field = requiredField(metadata, code);
             boolean primaryKey = "update".equals(mode) && truthy(field.get("isPrimary"));
-            String physicalColumn = column(field, code);
-            boolean controlled = SERVER_CONTROLLED_FIELDS.contains(code)
-                    || SERVER_CONTROLLED_COLUMNS.stream().anyMatch(physicalColumn::equalsIgnoreCase);
-            if (controlled && !(primaryKey && "id".equalsIgnoreCase(physicalColumn))) {
-                throw failure("FLOW_FIELD_FORBIDDEN", "服务端控制字段不可写入：" + code);
-            }
             boolean allowed = "insert".equals(mode) ? truthy(field.get("isInsert")) : truthy(field.get("isEdit"));
             if (!primaryKey && (!allowed || truthy(field.get("isAutoIncrement")))) {
                 throw failure("FLOW_FIELD_FORBIDDEN", "字段不可写入：" + code);
             }
             values.put(code, resolveValue(entry.getValue(), input));
         }
-        if (truthy(model.get("enableAuditField"))) addAuditValues(mode, metadata, values);
-        long tenantId = tenantId(context, model, metadata);
-        if (tenantId > 0 && "insert".equals(mode)) {
-            String tenantField = metadata.entrySet().stream()
-                    .filter(entry -> "tenant_id".equalsIgnoreCase(String.valueOf(entry.getValue().get("columnName"))))
-                    .map(Map.Entry::getKey).findFirst().orElseThrow();
-            values.put(tenantField, tenantId);
-        }
+        if (truthy(model.get("enableAuditField"))) addAuditValues(mode, metadata, values, trustedOperator);
+        if (rowScope.enabled() && "insert".equals(mode)) values.put(rowScope.ownerCode(), rowScope.owner());
         if (values.isEmpty()) throw failure("FLOW_WRITE_INVALID", "Flow 写入字段不能为空");
         if ("insert".equals(mode)) return insert(model, table, metadata, values);
-        return update(model, table, metadata, tenantId, values, input);
+        return update(model, table, metadata, rowScope, values, input);
     }
 
     private void addAuditValues(String mode, Map<String, Map<String, Object>> metadata,
-                                Map<String, Object> values) {
-        String operator = SecurityUtils.getUsername();
-        LocalDateTime now = LocalDateTime.now();
-        if ("insert".equals(mode)) {
-            setAuditValue(metadata, values, "createBy", "create_by", operator);
-            setAuditValue(metadata, values, "createTime", "create_time", now);
-        }
-        setAuditValue(metadata, values, "updateBy", "update_by", operator);
-        setAuditValue(metadata, values, "updateTime", "update_time", now);
+                                Map<String, Object> values, String trustedOperator) {
+        boolean insert = "insert".equals(mode);
+        boolean createAllowed = insert && writable(metadata.get("createBy"), true);
+        boolean updateAllowed = writable(metadata.get("updateBy"), insert);
+        if (!createAllowed && !updateAllowed) return;
+        String operator = trustedOperator == null ? SecurityUtils.getUsername() : trustedOperator;
+        if (createAllowed) values.put("createBy", operator);
+        if (updateAllowed) values.put("updateBy", operator);
     }
 
-    private void setAuditValue(Map<String, Map<String, Object>> metadata, Map<String, Object> values,
-                               String code, String physicalColumn, Object value) {
-        String target = metadata.entrySet().stream()
-                .filter(entry -> physicalColumn.equalsIgnoreCase(String.valueOf(entry.getValue().get("columnName"))))
-                .map(Map.Entry::getKey).findFirst().orElseGet(() -> {
-                    metadata.put(code, Map.of("fieldCode", code, "columnName", physicalColumn,
-                            "isPrimary", false, "isAutoIncrement", false, "isInsert", true, "isEdit", true));
-                    return code;
-                });
-        values.put(target, value);
+    private boolean writable(Map<String, Object> field, boolean insert) {
+        if (field == null) return false;
+        return insert ? truthy(field.get("isInsert")) : truthy(field.get("isEdit"));
     }
 
     private Map<String, Object> insert(Map<String, Object> model, String table,
@@ -182,7 +184,7 @@ public class JdbcFlowDataAdapter implements FlowDataAdapter {
     }
 
     private Map<String, Object> update(Map<String, Object> model, String table,
-                                       Map<String, Map<String, Object>> metadata, long tenantId,
+                                       Map<String, Map<String, Object>> metadata, RowScope rowScope,
                                        Map<String, Object> values, Map<String, Object> input) {
         String primary = metadata.values().stream().filter(f -> truthy(f.get("isPrimary")))
                 .map(f -> String.valueOf(f.get("fieldCode"))).findFirst()
@@ -197,14 +199,14 @@ public class JdbcFlowDataAdapter implements FlowDataAdapter {
             assignments.add(column(metadata.get(entry.getKey()), entry.getKey()) + " = ?");
             args.add(entry.getValue());
         }
-        String sql = "UPDATE " + table + " SET " + String.join(", ", assignments) + " WHERE ";
-        if (tenantId > 0) {
-            sql += "tenant_id = ? AND ";
-            args.add(tenantId);
-        }
-        sql += column(metadata.get(primary), primary) + " = ?";
         args.add(id);
+        String sql = "UPDATE " + table + " SET " + String.join(", ", assignments)
+                + " WHERE " + column(metadata.get(primary), primary) + " = ?";
         if (truthy(model.get("enableLogicDelete"))) sql += " AND deleted = 0";
+        if (rowScope.selfOnly()) {
+            sql += " AND " + rowScope.ownerColumn() + " = ?";
+            args.add(rowScope.owner());
+        }
         int affected = jdbc.update(sql, args.toArray());
         return Map.of("mode", "update", "affected", affected, "id", id);
     }
@@ -266,4 +268,11 @@ public class JdbcFlowDataAdapter implements FlowDataAdapter {
     private boolean sameId(Object value, long expected) { return value instanceof Number n && n.longValue() == expected; }
     private boolean truthy(Object value) { return value instanceof Boolean b ? b : value instanceof Number n && n.intValue() != 0; }
     private FlowRuntimeException failure(String code, String message) { return new FlowRuntimeException(code, message); }
+
+    private record RowScope(boolean enabled, boolean selfOnly, String ownerCode,
+                            String ownerColumn, String owner) {
+        private static RowScope disabled() {
+            return new RowScope(false, false, null, null, null);
+        }
+    }
 }
