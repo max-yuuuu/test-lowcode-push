@@ -1,0 +1,74 @@
+{
+  "document" : {
+    "nodes" : [ {
+      "id" : "input",
+      "kind" : "input",
+      "next" : "validate"
+    }, {
+      "id" : "validate",
+      "kind" : "validate",
+      "next" : "csv_file"
+    }, {
+      "assignments" : [ {
+        "value" : {
+          "source" : "literal",
+          "value" : "orders.csv"
+        },
+        "variableId" : "var_file_name"
+      }, {
+        "value" : {
+          "source" : "literal",
+          "value" : "/api/files/demo/orders.csv"
+        },
+        "variableId" : "var_download_url"
+      } ],
+      "id" : "csv_file",
+      "kind" : "map",
+      "next" : "end"
+    }, {
+      "id" : "end",
+      "kind" : "end",
+      "valueBindings" : {
+        "downloadUrl" : {
+          "source" : "variable",
+          "variableId" : "var_download_url"
+        },
+        "fileName" : {
+          "source" : "variable",
+          "variableId" : "var_file_name"
+        }
+      }
+    } ],
+    "schemaVersion" : 1,
+    "start" : "input",
+    "variables" : [ {
+      "code" : "fileName",
+      "defaultValue" : "",
+      "id" : "var_file_name",
+      "label" : "文件名称",
+      "nullable" : false,
+      "type" : {
+        "nullable" : false,
+        "type" : "string"
+      }
+    }, {
+      "code" : "downloadUrl",
+      "defaultValue" : "",
+      "id" : "var_download_url",
+      "label" : "下载地址",
+      "nullable" : false,
+      "type" : {
+        "nullable" : false,
+        "type" : "string"
+      }
+    } ]
+  },
+  "flowRevision" : 1,
+  "modelId" : 4,
+  "models" : { },
+  "operationCode" : "export_orders",
+  "operationId" : 33,
+  "permissionCode" : "sales:sales_order:export",
+  "projectId" : 1,
+  "version" : 3
+}

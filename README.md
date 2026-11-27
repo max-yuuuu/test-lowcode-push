@@ -2,22 +2,29 @@
 
 本项目通过低代码平台发布，项目编码 `order-service`，平台生成分支为 `platform-generated`。README 根据项目标记与仓库中已发布的业务产物生成。
 
+## 开发入口
+
+- [设计规范](DESIGN.md)：主题、组件复用与交互规范。
+- [开发约定](AGENTS.md)：交付项目本地开发必须遵守的约定。
+- [项目目录](#目录)：后端模块与前端工程职责。
+- [本地启动](#本地启动)：本地前后端启动与数据库初始化。
+- [容器部署](#容器部署)：单主机 Docker Compose 部署。
+- [环境变量示例](.env.example)：数据库、Redis、JWT 与前端代理配置。
+
 ## 已发布业务
 
 | 业务模块 | 后端位置 | 前端页面 |
 | --- | --- | --- |
-| `demo` | `scaffold-system/scaffold-business/src/main/java/com/scaffold/business/demo/` | `Demo.vue` |
+| `demo` | `scaffold-system/scaffold-business/src/main/java/com/scaffold/business/demo/` | — |
 | `e2e_order_trace` | `scaffold-system/scaffold-business/src/main/java/com/scaffold/business/e2e_order_trace/` | — |
 | `order_detail` | `scaffold-system/scaffold-business/src/main/java/com/scaffold/business/order_detail/` | — |
-| `order_list` | `scaffold-system/scaffold-business/src/main/java/com/scaffold/business/order_list/` | `OrderList.vue` |
+| `order_list` | `scaffold-system/scaffold-business/src/main/java/com/scaffold/business/order_list/` | — |
 | `sales_order` | `scaffold-system/scaffold-business/src/main/java/com/scaffold/business/sales_order/` | `SalesOrder.vue` |
 | `t11_demo` | `scaffold-system/scaffold-business/src/main/java/com/scaffold/business/t11_demo/` | `T11Demo.vue` |
 | `t11_verify_20261118` | `scaffold-system/scaffold-business/src/main/java/com/scaffold/business/t11_verify_20261118/` | — |
 
 ### 数据脚本
 
-- `scaffold-system/sql/pages/demo_table.sql`
-- `scaffold-system/sql/pages/order_list_table.sql`
 - `scaffold-system/sql/pages/sales_order_table.sql`
 - `scaffold-system/sql/pages/t11_demo_table.sql`
 
@@ -28,6 +35,8 @@
 - `scaffold-system/scaffold-business/src/main/resources/flow/4/archive_order.v2.json`
 - `scaffold-system/scaffold-business/src/main/resources/flow/4/export_orders.v1.json`
 - `scaffold-system/scaffold-business/src/main/resources/flow/4/export_orders.v3.json`
+- `scaffold-system/scaffold-business/src/main/resources/flow/archive_order.v2.json`
+- `scaffold-system/scaffold-business/src/main/resources/flow/export_orders.v3.json`
 
 ## 目录
 
