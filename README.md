@@ -67,7 +67,7 @@ export REDIS_HOST=localhost REDIS_PORT=6379
 
 ```bash
 cd scaffold-system
-mvn -pl scaffold-admin -am package -DskipTests
+mvn -pl scaffold-admin -am package -Dmaven.test.skip=true
 java -jar scaffold-admin/target/scaffold-admin-0.1.0-SNAPSHOT.jar
 ```
 
@@ -94,7 +94,7 @@ docker compose --profile mysql up -d --build
 - 本地开发规范见 `AGENTS.md`；前端继续使用 `@yuanda-lowcode-ai/scaffold-ui`，不把组件包源码复制进本仓库；视觉规范见 `DESIGN.md`。
 - 平台生成的 B 档文件会在发布时覆盖；人工业务逻辑写入 `*Extension.java`，页面扩展放入 `src/views/<module>/overrides/`。
 - 平台只写 `.scaffold-project.json` 中的 `generatedBranch`；主干分支由使用方控制。
-- 构建前先执行 `npm run build`，后端执行 `mvn -pl scaffold-admin -am package -DskipTests`。
+- 构建前先执行 `npm run build`，后端执行 `mvn -pl scaffold-admin -am package -Dmaven.test.skip=true`。
 
 ## 许可证
 
