@@ -15,7 +15,7 @@
 
 | 业务模块 | 后端位置 | 前端页面 |
 | --- | --- | --- |
-| `demo` | `scaffold-system/scaffold-business/src/main/java/com/scaffold/business/demo/` | — |
+| `demo` | `scaffold-system/scaffold-business/src/main/java/com/scaffold/business/demo/` | `Demo.vue` |
 | `e2e_order_trace` | `scaffold-system/scaffold-business/src/main/java/com/scaffold/business/e2e_order_trace/` | — |
 | `order_detail` | `scaffold-system/scaffold-business/src/main/java/com/scaffold/business/order_detail/` | — |
 | `order_list` | `scaffold-system/scaffold-business/src/main/java/com/scaffold/business/order_list/` | — |
@@ -25,6 +25,7 @@
 
 ### 数据脚本
 
+- `scaffold-system/sql/pages/demo_table.sql`
 - `scaffold-system/sql/pages/sales_order_table.sql`
 - `scaffold-system/sql/pages/t11_demo_table.sql`
 
