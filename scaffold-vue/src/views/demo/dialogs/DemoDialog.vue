@@ -190,8 +190,8 @@ defineExpose({ openCreate, openEdit, close })
     </Field>
     <template #footer>
       <div class="dialog-footer" :style="{ justifyContent: 'right' }">
-        <Button @click="list.load()">取消</Button>
-        <Button variant="primary" :loading="saving || loading" @click="list.load()">保存</Button>
+        <Button @click="close">取消</Button>
+        <Button variant="primary" :loading="saving || loading" @click="submit">保存</Button>
       </div>
     </template>
   </FormDialog>
