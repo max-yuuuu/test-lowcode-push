@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, reactive, ref } from 'vue'
-import { Field, TextInput } from '@yuanda-lowcode-ai/scaffold-ui/components/ui'
+import { Button, Field, TextInput } from '@yuanda-lowcode-ai/scaffold-ui/components/ui'
 import { FormDialog } from '@yuanda-lowcode-ai/scaffold-ui/components/business'
 import { pushToast, toastError } from '@yuanda-lowcode-ai/scaffold-ui/composables/toast'
 import { confirm } from '@yuanda-lowcode-ai/scaffold-ui/composables/confirm'
@@ -10,6 +10,9 @@ import { createGeneratedPageRuntime, resolveGeneratedTarget } from '@yuanda-lowc
 import type { PageDesignV2 } from '@yuanda-lowcode-ai/scaffold-ui/capabilities'
 
 const emit = defineEmits<{ saved: [] }>()
+type DialogOpenOptions = { title?: string, desc?: string }
+const dialogTitle = ref('123')
+const dialogDesc = ref('期望')
 const saving = ref(false)
 const loading = ref(false)
 const editing = ref<number | null>(null)
@@ -70,12 +73,27 @@ function disposeBehaviorTargets() {
   for (const dispose of behaviorTargetDisposers.values()) dispose()
   behaviorTargetDisposers.clear()
 }
-async function dispatchFormEvent(event: string) {
+async function dispatchButtonEvent(nodeId: string, event: string) {
   try {
-    const results = await pageBehavior.runtime.dispatch({ kind: 'component', nodeId: '37b81199-98a5-40cc-8925-1626e366b36d' }, event)
+    const results = await pageBehavior.runtime.dispatch({ kind: 'component', nodeId }, event)
     if (results.some(result => result.status === 'failed' && !result.handled)) throw new Error('弹窗事件执行失败')
   } finally {
   }
+}
+async function dispatchFormEvent(event: string) {
+  await dispatchButtonEvent('37b81199-98a5-40cc-8925-1626e366b36d', event)
+}
+async function runDefaultThenFlow(run: () => void | Promise<void>, nodeId: string, event = 'click') {
+  await run()
+  try {
+    await dispatchButtonEvent(nodeId, event)
+  } catch (error) {
+    toastError(error, '操作已执行，但后续流程失败')
+  }
+}
+function applyOpenOptions(options: DialogOpenOptions) {
+  dialogTitle.value = options.title || '123'
+  dialogDesc.value = options.desc || '期望'
 }
 async function submit() {
   if (saving.value || loading.value) return false
@@ -121,8 +139,9 @@ async function close() {
 }
 let openRequest = 0
 let loadedDetail: Partial<DemoWriteRequest> = {}
-function openCreate() {
+function openCreate(options: DialogOpenOptions = {}) {
   if (saving.value) return
+  applyOpenOptions(options)
   openRequest += 1
   loading.value = false
   editing.value = null
@@ -131,7 +150,7 @@ function openCreate() {
   errors.value = {}
   dialog.value = true
 }
-async function openEdit(id: number) {
+async function openEdit(id: number, options: DialogOpenOptions = {}) {
   if (saving.value || loading.value) return false
   const request = ++openRequest
   loading.value = true
@@ -142,6 +161,7 @@ async function openEdit(id: number) {
     loadedDetail = detail
     Object.assign(form, emptyForm(), detail)
     errors.value = {}
+    applyOpenOptions(options)
     dialog.value = true
     return true
   } catch (error) {
@@ -164,9 +184,23 @@ defineExpose({ openCreate, openEdit, close })
 </script>
 
 <template>
-  <FormDialog :open="dialog" :title="editing !== null ? '编辑测试模型' : '新增测试模型'" :saving="saving || loading" :ref="behaviorTargetRef('37b81199-98a5-40cc-8925-1626e366b36d')" @close="close" @submit="submit">
+  <FormDialog :open="dialog" :title="dialogTitle" :sub="dialogDesc" :saving="saving || loading" :ref="behaviorTargetRef('37b81199-98a5-40cc-8925-1626e366b36d')" @close="close" @submit="submit">
     <Field label="名称" wide :error="errors.name">
       <TextInput v-model="form.name" :ref="behaviorTargetRef('5838ca60-f527-40ab-a7d3-da961cad3839')" />
     </Field>
+    <template #footer>
+      <div class="dialog-footer" :style="{ justifyContent: 'right' }">
+        <Button @click="list.load()">取消</Button>
+        <Button variant="primary" :loading="saving || loading" @click="list.load()">保存</Button>
+      </div>
+    </template>
   </FormDialog>
 </template>
+
+<style scoped>
+.dialog-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+</style>
