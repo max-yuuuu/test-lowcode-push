@@ -6,8 +6,15 @@ import { useListPage } from '@yuanda-lowcode-ai/scaffold-ui/composables/list'
 import { confirm } from '@yuanda-lowcode-ai/scaffold-ui/composables/confirm'
 import { pushToast, toastError } from '@yuanda-lowcode-ai/scaffold-ui/composables/toast'
 import { demoApi, type DemoRow } from '@/api/demo/demo'
+type DialogOpenOptions = { title?: string, desc?: string }
+function dialogOpenOptions(args: Record<string, unknown>): DialogOpenOptions {
+  return {
+    ...(typeof args.title === 'string' && args.title ? { title: args.title } : {}),
+    ...(typeof args.desc === 'string' && args.desc ? { desc: args.desc } : {}),
+  }
+}
+type DialogPage = { openCreate(options?: DialogOpenOptions): void; openEdit(id: number, options?: DialogOpenOptions): Promise<boolean>; close(): void }
 import DemoDialog from './dialogs/DemoDialog.vue'
-type DialogPage = { openCreate(): void; openEdit(id: number): Promise<boolean>; close(): void }
 const dialogPages: Record<string, DialogPage | null> = {
   '34': null,
 }
@@ -64,20 +71,20 @@ const pageBehavior = createGeneratedPageRuntime({
     runPageAction: async (action: string, args: Record<string, unknown>) => {
       if (action === 'openPage') {
         const page = requireDialogPage(args.page)
-        if (args.id === undefined || args.id === null) { page.openCreate(); return true }
-        const opened = await page.openEdit(requireActionId(args.id))
+        if (args.id === undefined || args.id === null) { page.openCreate(dialogOpenOptions(args)); return true }
+        const opened = await page.openEdit(requireActionId(args.id), dialogOpenOptions(args))
         if (!opened) throw new Error('编辑测试模型未成功')
         return opened
       }
       if (action === 'create') {
         const target = args.dialog ?? args.nodeId
-        if (typeof target === 'string' && target in dialogPages) { requireDialogPage(target).openCreate(); return true }
+        if (typeof target === 'string' && target in dialogPages) { requireDialogPage(target).openCreate(dialogOpenOptions(args)); return true }
         throw new Error('页面动作 create 未配置可用的新增弹窗')
       }
       if (action === 'edit') {
         const target = args.dialog ?? args.nodeId
         if (typeof target === 'string' && target in dialogPages) {
-          const opened = await requireDialogPage(target).openEdit(requireActionId(args.id))
+          const opened = await requireDialogPage(target).openEdit(requireActionId(args.id), dialogOpenOptions(args))
           if (!opened) throw new Error('编辑测试模型未成功')
           return opened
         }
