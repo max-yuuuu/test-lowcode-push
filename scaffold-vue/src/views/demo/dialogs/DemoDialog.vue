@@ -166,7 +166,7 @@ defineExpose({ openCreate, openEdit, close })
 <template>
   <FormDialog :open="dialog" :title="editing !== null ? '编辑测试模型' : '新增测试模型'" :saving="saving || loading" :ref="behaviorTargetRef('37b81199-98a5-40cc-8925-1626e366b36d')" @close="close" @submit="submit">
     <Field label="名称" wide :error="errors.name">
-      <TextInput v-model="form.name" :ref="behaviorTargetRef('084f8ba2-ad33-49ac-a9a6-8c9cca1b0c85')" />
+      <TextInput v-model="form.name" :ref="behaviorTargetRef('5838ca60-f527-40ab-a7d3-da961cad3839')" />
     </Field>
   </FormDialog>
 </template>
